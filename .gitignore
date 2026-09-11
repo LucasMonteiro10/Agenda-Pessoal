@@ -1,0 +1,24 @@
+# Segredos locais
+.env
+
+# Java / Maven / Gradle (backend, a partir do Dia 2)
+target/
+build/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node (frontend, a partir do Dia 2)
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
