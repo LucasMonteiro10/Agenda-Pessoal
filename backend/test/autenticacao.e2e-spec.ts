@@ -25,13 +25,18 @@ describe('Autenticação (e2e)', () => {
   });
 
   it('Cenário: Cadastro de novo usuário', async () => {
-    // Quando eu me cadastro com email e senha válidos
+    // Quando eu me cadastro com nome completo, email e senha válidos
     const registerResponse = await request(app.getHttpServer())
       .post('/auth/registrar')
-      .send({ email: `nova-conta-${randomUUID()}@teste.com`, senha: 'senha-forte-123' });
+      .send({
+        nomeCompleto: 'Nova Usuária',
+        email: `nova-conta-${randomUUID()}@teste.com`,
+        senha: 'senha-forte-123',
+      });
 
     // Então uma conta deve ser criada
     expect(registerResponse.status).toBe(201);
+    expect(registerResponse.body.nomeCompleto).toBe('Nova Usuária');
     // ...e a senha (nem o hash dela) nunca deve voltar na resposta.
     expect(registerResponse.body.senha).toBeUndefined();
 
@@ -49,7 +54,10 @@ describe('Autenticação (e2e)', () => {
     // Dado que eu tenho uma conta cadastrada
     const email = `login-valido-${randomUUID()}@teste.com`;
     const senha = 'senha-forte-123';
-    await request(app.getHttpServer()).post('/auth/registrar').send({ email, senha }).expect(201);
+    await request(app.getHttpServer())
+      .post('/auth/registrar')
+      .send({ nomeCompleto: 'Usuária de Login Válido', email, senha })
+      .expect(201);
 
     // Quando eu informo email e senha corretos
     const loginResponse = await request(app.getHttpServer())
@@ -85,7 +93,7 @@ describe('Autenticação (e2e)', () => {
     const email = `senha-errada-${randomUUID()}@teste.com`;
     await request(app.getHttpServer())
       .post('/auth/registrar')
-      .send({ email, senha: 'senha-correta-123' })
+      .send({ nomeCompleto: 'Usuária de Senha Errada', email, senha: 'senha-correta-123' })
       .expect(201);
 
     const senhaErradaResponse = await request(app.getHttpServer())
@@ -102,8 +110,14 @@ describe('Autenticação (e2e)', () => {
     const emailB = `usuario-b-${randomUUID()}@teste.com`;
     const senha = 'senha-forte-123';
 
-    await request(app.getHttpServer()).post('/auth/registrar').send({ email: emailA, senha }).expect(201);
-    await request(app.getHttpServer()).post('/auth/registrar').send({ email: emailB, senha }).expect(201);
+    await request(app.getHttpServer())
+      .post('/auth/registrar')
+      .send({ nomeCompleto: 'Usuária A', email: emailA, senha })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/auth/registrar')
+      .send({ nomeCompleto: 'Usuário B', email: emailB, senha })
+      .expect(201);
 
     const tokenA = (
       await request(app.getHttpServer()).post('/auth/login').send({ email: emailA, senha })

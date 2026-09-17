@@ -36,6 +36,7 @@ export async function createTestApp(): Promise<INestApplication> {
 }
 
 export interface UsuarioDeTeste {
+  nomeCompleto: string;
   email: string;
   senha: string;
   accessToken: string;
@@ -46,17 +47,18 @@ export interface UsuarioDeTeste {
 // usuário autenticado para poder chamar os endpoints protegidos.
 export async function registrarEAutenticar(
   app: INestApplication,
-  overrides: Partial<{ email: string; senha: string }> = {},
+  overrides: Partial<{ nomeCompleto: string; email: string; senha: string }> = {},
 ): Promise<UsuarioDeTeste> {
+  const nomeCompleto = overrides.nomeCompleto ?? 'Usuária de Teste';
   const email = overrides.email ?? `usuario-${randomUUID()}@teste.com`;
   const senha = overrides.senha ?? 'senha-forte-123';
 
-  await request(app.getHttpServer()).post('/auth/registrar').send({ email, senha }).expect(201);
+  await request(app.getHttpServer()).post('/auth/registrar').send({ nomeCompleto, email, senha }).expect(201);
 
   const loginResponse = await request(app.getHttpServer())
     .post('/auth/login')
     .send({ email, senha })
     .expect(200);
 
-  return { email, senha, accessToken: loginResponse.body.accessToken as string };
+  return { nomeCompleto, email, senha, accessToken: loginResponse.body.accessToken as string };
 }

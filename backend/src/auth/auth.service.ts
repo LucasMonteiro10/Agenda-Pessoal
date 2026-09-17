@@ -16,16 +16,16 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async registrar({ email, senha }: RegistrarDto) {
+  async registrar({ nomeCompleto, email, senha }: RegistrarDto) {
     const jaExiste = await this.usuarios.findOne({ where: { email } });
     if (jaExiste) {
       throw new ConflictException('Já existe uma conta com esse email');
     }
 
     const senhaHash = await bcrypt.hash(senha, CUSTO_HASH_SENHA);
-    const usuario = await this.usuarios.save(this.usuarios.create({ email, senhaHash }));
+    const usuario = await this.usuarios.save(this.usuarios.create({ nomeCompleto, email, senhaHash }));
 
-    return { id: usuario.id, email: usuario.email };
+    return { id: usuario.id, nomeCompleto: usuario.nomeCompleto, email: usuario.email };
   }
 
   async login({ email, senha }: LoginDto) {

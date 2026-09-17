@@ -263,7 +263,7 @@ Funcionalidade: Limpar todas as alocações do calendário
 Funcionalidade: Autenticação de usuário
 
   Cenário: Cadastro de novo usuário
-    Quando eu me cadastro com email e senha válidos
+    Quando eu me cadastro com nome completo, email e senha válidos
     Então uma conta deve ser criada
     E eu devo conseguir fazer login com essas credenciais
 

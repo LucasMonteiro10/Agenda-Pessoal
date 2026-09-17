@@ -396,6 +396,51 @@ semântica é idêntica ("apagar alocações, preservando atividades") — só m
 o filtro. Ver `AlocacoesService.removerTodas` e cenário Gherkin em
 `docs/requisitos.md`, Feature "Interagir com um card de alocação".
 
+### 7.9. Telas de Login/Cadastro implementadas (19/09/2026)
+
+Até aqui só existia a integração de Autenticação no backend (Dia 3/4); a UI
+era um placeholder (`<h1>Login</h1>` sem formulário, e nem estava conectada
+em `App.tsx`). Implementado agora:
+
+- **Campo novo: `nomeCompleto`.** Cadastro passou a exigir nome completo,
+  email e senha (antes só email/senha). `Usuario.nomeCompleto` é `NOT NULL`
+  — quebrou o `synchronize` do TypeORM contra o Postgres local (que já
+  tinha usuários de teste sem esse campo, do Dia 4); resolvido recriando o
+  volume local (`docker compose down -v`), com autorização do Lucas, já que
+  são só dados de teste descartáveis. Fica registrado como lembrete: sem
+  migrations (seção 7.2), qualquer coluna `NOT NULL` nova em cima de dados
+  existentes é um risco parecido — outro motivo para migrations versionadas
+  virarem prioridade (ver "Próximos passos" em `docs/requisitos.md`).
+- **`TelaAutenticada`** ganhou os formulários de verdade: alterna entre
+  "Login" (email + senha) e "Criar conta" (nome completo + email + senha)
+  via um botão de alternância. Cadastro chama `POST /auth/registrar` e, em
+  seguida, `POST /auth/login` automaticamente com as mesmas credenciais
+  (cadastro não devolve token) — assim quem cria conta já cai direto no
+  cronograma, sem precisar logar de novo à mão.
+- **`authApi.ts`** (novo): cliente fininho sobre `fetch`, usando
+  `VITE_API_URL` (já provisionado desde o Dia 2, seção 3/4). Erros do
+  backend (400 de validação, 401 de credenciais) são extraídos do corpo
+  `{ message }` do NestJS e exibidos como `role="alert"` no formulário.
+  Nenhuma lib nova (`axios` etc.) — `fetch` nativo já resolve.
+  - **`App.tsx`** agora guarda o `accessToken` em `localStorage` (chave
+  `accessToken`) e envolve toda a composição existente com
+  `<TelaAutenticada>`. Só a autenticação fala com o backend por enquanto —
+  Atividades/Alocações continuam em estado local mockado (`useState`), como
+  já era; conectar essa parte ao backend é um passo separado, ainda não
+  feito.
+- **Defeito encontrado e corrigido nesta rodada:** deslogar logo depois de
+  um cadastro deixava a tela presa em "Criar conta" em vez de voltar para
+  "Login" — o estado interno (`modo`) do formulário não era resetado.
+  Corrigido em `handleDeslogar` (zera `modo`/campos/erro antes de chamar
+  `onDeslogar`). Reproduzido manualmente no navegador e coberto por teste
+  (`TelaAutenticada.test.tsx`).
+- **Achado à parte, sem relação com este trabalho:** o `node_modules` do
+  container `frontend` (volume anônimo) estava sem os pacotes
+  `@fullcalendar/*` — faltou reinstalar depois de alguma mudança de
+  dependência anterior. Corrigido rodando
+  `docker compose exec frontend npm install --legacy-peer-deps` e reiniciando
+  o serviço.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e
