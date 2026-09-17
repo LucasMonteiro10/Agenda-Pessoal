@@ -47,3 +47,17 @@ sem precisar reconstruir a imagem.
 > `backend/` ou `frontend/` (fora do Docker), use
 > `npm install --legacy-peer-deps` — veja a nota técnica na seção 7.2 do
 > `CLAUDE.md`.
+
+> **Erro `Failed to resolve import "@algum-pacote"` mesmo depois de
+> `--build`?** O `docker-compose.yml` usa um volume anônimo pra
+> `frontend/node_modules` (pra não perder o hot-reload nem sobrescrever o
+> `node_modules` do container com o bind mount do código-fonte) — e esse
+> volume **sobrevive** a `docker compose down`/`up -d --build`, então uma
+> dependência nova pode continuar faltando mesmo com a imagem já
+> reconstruída. Resolve com:
+> ```bash
+> docker compose rm -f -v frontend   # remove o container E o volume anônimo dele
+> docker compose up -d --build frontend
+> ```
+> Isso não afeta o Postgres (`postgres_data` é um volume nomeado, nunca
+> removido por engano por esse comando).

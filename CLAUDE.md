@@ -164,6 +164,19 @@ Diretrizes para qualquer IA atuando aqui:
 - `npm install` no `frontend/` também pode precisar de `--testing-library/dom`
   como dependência explícita (peer do React Testing Library que o npm às
   vezes não resolve sozinho) e do mesmo `--legacy-peer-deps` do backend.
+- **Volume anônimo de `node_modules` sobrevive a `docker compose up -d
+  --build`.** O `docker-compose.yml` monta `frontend/node_modules` (e o
+  equivalente do backend) como volume anônimo, pra não perder o hot-reload
+  nem deixar o bind mount do código-fonte apagar o `node_modules` instalado
+  na imagem. Só que o Compose **preserva esse volume entre recriações de
+  container** — rebuildar a imagem (`--build`) sozinho não reseta o que já
+  está montado, então uma dependência nova (ex.: `@fullcalendar/*`,
+  `water.css`) pode continuar dando `Failed to resolve import` mesmo depois
+  do rebuild. Aconteceu 3 vezes neste projeto (seções 7.9/7.10). Fix
+  correto: `docker compose rm -f -v <serviço>` (remove o container **e**
+  seu volume anônimo) antes de subir de novo com `--build` — não `docker
+  compose down -v`, que também apagaria o `postgres_data` (volume nomeado,
+  com dados de verdade). Ver nota equivalente no `README.md`.
 
 ### 7.3. Contrato proposto pela Muralha de Testes (Dia 3)
 
