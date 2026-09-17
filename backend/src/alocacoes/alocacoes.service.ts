@@ -73,14 +73,21 @@ export class AlocacoesService {
     await this.alocacoes.delete(id);
   }
 
-  // Feature "Limpar calendário": remove todas as alocações do usuário,
-  // preservando as atividades na pool.
-  async removerTodas(usuarioId: string): Promise<void> {
-    await this.alocacoes
+  // Feature "Limpar calendário" (sem atividadeId) e Feature "Interagir com
+  // um card de alocação" > "Excluir alocações" (com atividadeId): remove
+  // alocações do usuário — todas, ou só as de uma Atividade específica —
+  // preservando sempre as Atividades na pool.
+  async removerTodas(usuarioId: string, atividadeId?: string): Promise<void> {
+    const consulta = this.alocacoes
       .createQueryBuilder()
       .delete()
-      .where('"atividadeId" IN (SELECT id FROM atividades WHERE "usuarioId" = :usuarioId)', { usuarioId })
-      .execute();
+      .where('"atividadeId" IN (SELECT id FROM atividades WHERE "usuarioId" = :usuarioId)', { usuarioId });
+
+    if (atividadeId) {
+      consulta.andWhere('"atividadeId" = :atividadeId', { atividadeId });
+    }
+
+    await consulta.execute();
   }
 
   private async buscarDoUsuarioOuFalhar(usuarioId: string, id: string): Promise<Alocacao> {

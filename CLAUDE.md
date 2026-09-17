@@ -376,6 +376,26 @@ e reverificados manualmente no navegador:
    dentro da `PoolLateral`, reaproveitando a mesma checagem de nome único já
    usada no backend (Suposições, item 5).
 
+### 7.8. Mudança de comportamento: "Excluir alocações" no menu do card (19/09/2026)
+
+Lucas pediu pra separar dois comportamentos que antes eram o mesmo texto
+("Excluir atividade") em lugares diferentes da UI:
+
+- **Menu do card no calendário → "Excluir alocações":** remove todos os
+  clones daquela Atividade no calendário, mas a Atividade **continua na
+  pool**, disponível pra novas alocações.
+- **Botão "Excluir" na pool ("Suas atividades"):** continua cascateando —
+  remove a Atividade e todas as suas Alocações. Esse comportamento não
+  mudou.
+
+Implementado como uma extensão do endpoint de "Limpar calendário"
+(`DELETE /alocacoes`), que já existia: um novo parâmetro opcional
+`?atividadeId=` escopa a remoção só às alocações daquela atividade, em vez
+de todas as alocações do usuário. Preferido a criar uma rota nova porque a
+semântica é idêntica ("apagar alocações, preservando atividades") — só muda
+o filtro. Ver `AlocacoesService.removerTodas` e cenário Gherkin em
+`docs/requisitos.md`, Feature "Interagir com um card de alocação".
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

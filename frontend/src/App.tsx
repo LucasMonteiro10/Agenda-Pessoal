@@ -21,8 +21,16 @@ function App() {
   const [diaInicioSemana, setDiaInicioSemana] = useState<DiaSemana>('domingo')
   const [granularidadeMinutos, setGranularidadeMinutos] = useState(30)
 
+  // Botão "Excluir" da pool: remove a atividade e todas as suas alocações
+  // (cascata) — a atividade some da pool também.
   function excluirAtividade(atividadeId: string) {
     setAtividades((atual) => atual.filter((item) => item.id !== atividadeId))
+    setAlocacoes((atual) => atual.filter((alocacao) => alocacao.atividade.id !== atividadeId))
+  }
+
+  // "Excluir alocações" a partir do menu do card: limpa só as alocações
+  // daquela atividade no calendário — a atividade continua na pool.
+  function excluirAlocacoesDaAtividade(atividadeId: string) {
     setAlocacoes((atual) => atual.filter((alocacao) => alocacao.atividade.id !== atividadeId))
   }
 
@@ -68,7 +76,7 @@ function App() {
             setAlocacoes((atual) => [...atual, { ...original, id: crypto.randomUUID() }])
           }}
           onExcluir={(id) => setAlocacoes((atual) => atual.filter((alocacao) => alocacao.id !== id))}
-          onExcluirAtividade={excluirAtividade}
+          onExcluirAlocacoesDaAtividade={excluirAlocacoesDaAtividade}
         />
 
         <PoolLateral

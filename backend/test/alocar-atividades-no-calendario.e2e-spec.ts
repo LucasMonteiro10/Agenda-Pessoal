@@ -8,10 +8,12 @@ import { createTestApp, registrarEAutenticar, startPostgresContainer, UsuarioDeT
 //
 // Mapeamento de "Interagir com um card de alocação" para o backend: "abrir
 // menu" e "cancelar exclusão" são só UI (sem chamada de API) — ficam na
-// suíte de frontend. "Duplicar", "Excluir" (um card) e "Excluir atividade"
-// (cascata) não precisam de endpoints próprios: são, respectivamente, o
-// mesmo POST /alocacoes, o mesmo DELETE /alocacoes/:id e o mesmo
-// DELETE /atividades/:id já teste aqui e em
+// suíte de frontend. "Duplicar" e "Excluir" (um card) não precisam de
+// endpoints próprios: são o mesmo POST /alocacoes e o mesmo
+// DELETE /alocacoes/:id já testados aqui. "Excluir alocações" (a partir do
+// card, mantendo a Atividade na pool) usa DELETE /alocacoes?atividadeId=:id
+// — diferente de DELETE /atividades/:id (que cascateia e remove a Atividade
+// da pool também), esse é o botão "Excluir" da pool, testado em
 // gerenciar-pool-de-atividades.e2e-spec.ts.
 describe('Alocar atividades no calendário (e2e)', () => {
   let container: StartedPostgreSqlContainer;
@@ -208,5 +210,43 @@ describe('Alocar atividades no calendário (e2e)', () => {
     // E a atividade "Estudar Inglês" deve continuar na pool
     const pool = await request(app.getHttpServer()).get('/atividades').set(autenticado());
     expect(pool.body).toHaveLength(1);
+  });
+
+  it('Cenário: Excluir alocações a partir do card remove todos os clones e mantém a atividade na pool', async () => {
+    // Dado que a atividade "Estudar Inglês" possui alocações na segunda-feira e na sexta-feira
+    const estudarInglesId = await criarAtividade('Estudar Inglês');
+    await request(app.getHttpServer())
+      .post('/alocacoes')
+      .set(autenticado())
+      .send({ atividadeId: estudarInglesId, diaSemana: 'segunda-feira', horaInicio: '19:00', duracaoMinutos: 60 });
+    await request(app.getHttpServer())
+      .post('/alocacoes')
+      .set(autenticado())
+      .send({ atividadeId: estudarInglesId, diaSemana: 'sexta-feira', horaInicio: '19:00', duracaoMinutos: 60 });
+
+    // E existe uma alocação de outra atividade, que não deve ser afetada
+    const trabalhoId = await criarAtividade('Trabalho');
+    const alocacaoTrabalho = await request(app.getHttpServer())
+      .post('/alocacoes')
+      .set(autenticado())
+      .send({ atividadeId: trabalhoId, diaSemana: 'quarta-feira', horaInicio: '09:00', duracaoMinutos: 60 });
+
+    // Quando eu clico em "Excluir alocações" nas opções do card (e confirmo)
+    await request(app.getHttpServer())
+      .delete('/alocacoes')
+      .query({ atividadeId: estudarInglesId })
+      .set(autenticado())
+      .expect(204);
+
+    // Então nenhuma alocação de "Estudar Inglês" deve continuar no calendário
+    const alocacoesRestantes = await request(app.getHttpServer()).get('/alocacoes').set(autenticado());
+    expect(alocacoesRestantes.body).toEqual([expect.objectContaining({ id: alocacaoTrabalho.body.id })]);
+
+    // E a atividade "Estudar Inglês" deve continuar na pool, disponível para novas alocações
+    const pool = await request(app.getHttpServer()).get('/atividades').set(autenticado());
+    expect(pool.body.map((atividade: { nome: string }) => atividade.nome).sort()).toEqual([
+      'Estudar Inglês',
+      'Trabalho',
+    ]);
   });
 });

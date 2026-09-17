@@ -102,7 +102,10 @@ export interface CalendarioSemanalProps {
   onRedimensionarAlocacao: (alocacaoId: string, novaDuracaoMinutos: number) => void;
   onDuplicar: (alocacaoId: string) => void;
   onExcluir: (alocacaoId: string) => void;
-  onExcluirAtividade: (atividadeId: string) => void;
+  // "Excluir alocações": remove todos os clones da atividade, mas mantém a
+  // atividade na pool (diferente do "Excluir" da pool, que cascateia e some
+  // com a atividade também — ver AtividadeItem).
+  onExcluirAlocacoesDaAtividade: (atividadeId: string) => void;
 }
 
 interface MenuAberto {
@@ -121,10 +124,10 @@ export function CalendarioSemanal({
   onRedimensionarAlocacao,
   onDuplicar,
   onExcluir,
-  onExcluirAtividade,
+  onExcluirAlocacoesDaAtividade,
 }: CalendarioSemanalProps) {
   const [menu, setMenu] = useState<MenuAberto | null>(null);
-  const [confirmandoExclusaoAtividade, setConfirmandoExclusaoAtividade] = useState<string | null>(null);
+  const [confirmandoExclusaoDeAlocacoes, setConfirmandoExclusaoDeAlocacoes] = useState<string | null>(null);
   const calendarioRef = useRef<FullCalendar>(null);
 
   // `initialDate`/`initialView` só se aplicam na primeira renderização — o
@@ -236,11 +239,11 @@ export function CalendarioSemanal({
               <li
                 role="menuitem"
                 onClick={() => {
-                  setConfirmandoExclusaoAtividade(menu.atividadeId);
+                  setConfirmandoExclusaoDeAlocacoes(menu.atividadeId);
                   setMenu(null);
                 }}
               >
-                Excluir atividade
+                Excluir alocações
               </li>
             </ul>
           </>,
@@ -248,15 +251,15 @@ export function CalendarioSemanal({
         )}
 
       <ConfirmDialog
-        open={confirmandoExclusaoAtividade !== null}
-        mensagem="Excluir esta atividade? Todas as suas alocações também serão removidas."
+        open={confirmandoExclusaoDeAlocacoes !== null}
+        mensagem="Excluir todas as alocações desta atividade no calendário? A atividade continua na pool."
         onConfirmar={() => {
-          if (confirmandoExclusaoAtividade) {
-            onExcluirAtividade(confirmandoExclusaoAtividade);
+          if (confirmandoExclusaoDeAlocacoes) {
+            onExcluirAlocacoesDaAtividade(confirmandoExclusaoDeAlocacoes);
           }
-          setConfirmandoExclusaoAtividade(null);
+          setConfirmandoExclusaoDeAlocacoes(null);
         }}
-        onCancelar={() => setConfirmandoExclusaoAtividade(null)}
+        onCancelar={() => setConfirmandoExclusaoDeAlocacoes(null)}
       />
     </div>
   );

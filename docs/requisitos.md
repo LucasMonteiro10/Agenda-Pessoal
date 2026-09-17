@@ -42,11 +42,13 @@ Ver seção 5 do `CLAUDE.md`. Resumo: **Atividade** (nome + cor, na pool) vs.
    bloqueio de conflito). A exibição de alocações sobrepostas usa o layout
    padrão do FullCalendar (colunas lado a lado, proporcional ao número de
    alocações sobrepostas) — ver CLAUDE.md, seção 7.6.
-7. **Novo.** Clicar em um card de Alocação não cria mais um clone
-   automaticamente — abre um menu de opções: "Duplicar" (cria um clone logo
-   abaixo do card original), "Excluir" (remove só aquela Alocação) e
-   "Excluir atividade" (remove a Atividade da pool e todas as suas Alocações,
-   com confirmação).
+7. **Corrigido em 19/09/2026.** Clicar em um card de Alocação não cria mais
+   um clone automaticamente — abre um menu de opções: "Duplicar" (cria um
+   clone logo abaixo do card original), "Excluir" (remove só aquela
+   Alocação) e "Excluir alocações" (remove **todas** as Alocações daquela
+   Atividade, com confirmação, mas mantém a Atividade na pool). Excluir a
+   Atividade em si (cascata que também some com ela da pool) só é possível
+   a partir da pool — ver item 1.
 8. **Novo.** Responsividade para celular (PWA ou app nativo) fica fora de
    escopo por enquanto.
 
@@ -139,7 +141,7 @@ Funcionalidade: Opções de um card de alocação no calendário
   Cenário: Clicar em um card abre o menu de opções
     Dado que existe uma alocação de "Estudar Inglês" na segunda-feira às 19:00 por 1h
     Quando eu clico sobre o card dessa alocação
-    Então o sistema deve exibir as opções "Duplicar", "Excluir" e "Excluir atividade"
+    Então o sistema deve exibir as opções "Duplicar", "Excluir" e "Excluir alocações"
 
   Cenário: Duplicar cria um clone logo abaixo do card original
     Dado que existe uma alocação de "Estudar Inglês" na segunda-feira às 19:00 por 1h
@@ -156,22 +158,27 @@ Funcionalidade: Opções de um card de alocação no calendário
     E a alocação de sexta-feira deve continuar existindo
     E a atividade "Estudar Inglês" deve continuar na pool
 
-  Cenário: Excluir atividade a partir do card remove a atividade e todos os clones
+  Cenário: Excluir alocações a partir do card remove todos os clones e mantém a atividade na pool
     Dado que a atividade "Estudar Inglês" possui alocações na segunda-feira e na sexta-feira
-    Quando eu clico em "Excluir atividade" nas opções do card da alocação de segunda-feira
+    Quando eu clico em "Excluir alocações" nas opções do card da alocação de segunda-feira
     Então o sistema deve exibir uma mensagem de confirmação
     Quando eu confirmo a exclusão
-    Então a atividade "Estudar Inglês" não deve mais aparecer na pool
-    E nenhuma alocação de "Estudar Inglês" deve continuar no calendário
+    Então nenhuma alocação de "Estudar Inglês" deve continuar no calendário
+    E a atividade "Estudar Inglês" deve continuar na pool, disponível para novas alocações
 
-  Cenário: Clicar em Cancelar impede a exclusão da atividade do card
+  Cenário: Clicar em Cancelar impede a exclusão das alocações do card
     Dado que a atividade "Estudar Inglês" possui alocações na segunda-feira e na sexta-feira
-    Quando eu clico em "Excluir atividade" nas opções do card da alocação de segunda-feira
+    Quando eu clico em "Excluir alocações" nas opções do card da alocação de segunda-feira
     Então o sistema deve exibir uma mensagem de confirmação
     Quando eu clico em cancelar a exclusão
-    Então a atividade "Estudar Inglês" deve permanecer na pool
-    E nenhuma alocação de "Estudar Inglês" deve ser removida do calendário
+    Então nenhuma alocação de "Estudar Inglês" deve ser removida do calendário
 ```
+> Nota: excluir a atividade em si (removendo-a da pool e cascateando pra
+> todas as suas alocações) só é possível a partir da pool ("Suas
+> atividades"), não pelo menu do card — ver Feature "Gerenciar pool de
+> atividades", cenário "Excluir uma atividade pede confirmação e remove
+> seus clones". A partir do card, o pior caso é esvaziar o calendário
+> daquela atividade, nunca perder a atividade em si.
 
 ## Feature: Configurações do calendário
 

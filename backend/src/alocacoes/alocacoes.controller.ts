@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -51,10 +52,12 @@ export class AlocacoesController {
     return this.alocacoesService.remover(usuario.id, id);
   }
 
-  // Feature "Limpar calendário".
+  // Feature "Limpar calendário" (sem query) e "Excluir alocações" a partir
+  // do card, Feature "Interagir com um card de alocação" (com
+  // ?atividadeId=). Em ambos os casos a Atividade continua na pool.
   @Delete()
   @HttpCode(204)
-  removerTodas(@UsuarioAtual() usuario: UsuarioAutenticado) {
-    return this.alocacoesService.removerTodas(usuario.id);
+  removerTodas(@UsuarioAtual() usuario: UsuarioAutenticado, @Query('atividadeId') atividadeId?: string) {
+    return this.alocacoesService.removerTodas(usuario.id, atividadeId);
   }
 }
