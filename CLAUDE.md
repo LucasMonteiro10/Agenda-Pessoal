@@ -42,7 +42,8 @@ Diretrizes para qualquer IA atuando aqui:
   global (ainda não conectado — sem slices reais até existir estado de
   verdade a gerenciar, ver seção 7.4), `FullCalendar` (`@fullcalendar/react`
   + `timegrid` + `interaction`, todos fixados em `6.1.21`) para o grid
-  semanal. CSS puro (arquivos `.css`, sem CSS-in-JS nem framework de UI).
+  semanal. CSS puro (arquivos `.css`, sem CSS-in-JS nem framework de UI) —
+  **exceção pontual:** `water.css` só na tela de login/cadastro, ver seção 7.10.
 - **Testes backend:** Vitest (padrão do NestJS a partir da v12) + Supertest
   para testes de integração de endpoints, Testcontainers (Postgres real em
   testes de integração).
@@ -440,6 +441,41 @@ em `App.tsx`). Implementado agora:
   dependência anterior. Corrigido rodando
   `docker compose exec frontend npm install --legacy-peer-deps` e reiniciando
   o serviço.
+
+### 7.10. `water.css` só na tela de login/cadastro (19/09/2026)
+
+Lucas pediu pra melhorar a aparência do login/cadastro. Foram comparadas 4
+bibliotecas CSS "classless" (Pico, Water.css, Simple.css, MVP.css) num
+Artifact à parte, lado a lado com o visual atual — Lucas escolheu
+**Water.css**.
+
+Isso é uma exceção pontual à regra "CSS puro, sem framework de UI" (seção
+3) — water.css é só CSS (sem CSS-in-JS, sem mudar nenhum componente), mas
+ainda é um framework de estilo de terceiros. Reaberto e decidido
+explicitamente por Lucas, não uma escolha unilateral da IA.
+
+**Por que só na tela de login:** water.css é *classless* — estiliza
+`<body>`, `<input>`, `<button>`, `<table>` etc. direto pela tag, documento
+inteiro. Um `import 'water.css'` estático em `main.tsx` ficaria sempre
+ativo e recolocaria o cronograma inteiro também (botões da pool, da grade
+semanal etc.), muito além do que foi pedido. Em vez disso,
+`TelaAutenticada.tsx` injeta/remove um `<link rel="stylesheet">` via
+`useEffect` amarrado à prop `autenticado`: o CSS só existe no `<head>`
+enquanto a tela de login está visível, e some assim que autentica — o
+resto do app continua com o `index.css`/`App.css` de sempre. Ver
+`useWaterCssEnquantoDeslogado` em `TelaAutenticada.tsx`.
+
+O caminho do arquivo CSS vem de `import waterCssHref from 'water.css?url'`
+(sintaxe nativa do Vite para pegar a URL de um asset em vez de injetá-lo
+como `<link>` automático) — só assim dava pra controlar manualmente
+quando o `<link>` entra e sai do documento.
+
+Reproduzido manualmente no navegador: tela de login com o visual do
+Water.css (inclusive dark mode automático pelo tema do sistema);
+autenticado → cronograma com o visual de sempre; deslogar → volta o
+Water.css. Confirmado via DevTools que o `<link>` é removido do `<head>`
+ao autenticar (não é só uma questão de especificidade CSS escondendo o
+efeito).
 
 ## 8. Requisitos funcionais
 

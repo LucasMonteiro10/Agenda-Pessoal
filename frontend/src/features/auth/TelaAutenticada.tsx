@@ -1,4 +1,5 @@
-import { type FormEvent, type ReactNode, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
+import waterCssHref from 'water.css?url';
 import * as authApi from './authApi.ts';
 
 export interface TelaAutenticadaProps {
@@ -10,6 +11,27 @@ export interface TelaAutenticadaProps {
 
 type Modo = 'login' | 'cadastro';
 
+// water.css é "classless" — estiliza <body>/<input>/<button>/<table> etc.
+// direto pela tag, documento inteiro. Só queremos esse visual na tela de
+// login (o resto do app já tem seu próprio estilo em index.css/App.css),
+// então o <link> é inserido/removido dinamicamente junto com a troca de
+// `autenticado`, em vez de um `import` estático de main.tsx (que ficaria
+// sempre ativo e recolocaria o cronograma inteiro também).
+function useWaterCssEnquantoDeslogado(autenticado: boolean) {
+  useEffect(() => {
+    if (autenticado) return;
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = waterCssHref;
+    document.head.appendChild(link);
+
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, [autenticado]);
+}
+
 // Sem biblioteca de rotas decidida ainda (CLAUDE.md, seção 7), este
 // componente representa a alternância "cronograma" / "tela de login" a
 // partir de uma flag, sem navegação de URL de fato.
@@ -20,6 +42,8 @@ export function TelaAutenticada({ autenticado, onAutenticado, onDeslogar, childr
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  useWaterCssEnquantoDeslogado(autenticado);
 
   function handleDeslogar() {
     // Volta ao estado inicial da tela de login — sem isso, deslogar logo
