@@ -11,7 +11,8 @@ quadro semanal recorrente). O usuário mantém uma **pool** de atividades (ex.:
 "Estudar Inglês", "Trabalho", "Almoço") e as posiciona livremente em um grid de
 7 dias da semana, com hora de início e duração ajustáveis visualmente.
 
-Projeto de estudo/portfólio — escopo intencionalmente pequeno. Não escalar
+Projeto de estudo/portfólio (React + NestJS), usado também para estudar
+desenvolvimento web moderno — escopo intencionalmente pequeno. Não escalar
 funcionalidades além do que está em `docs/requisitos.md` sem antes atualizar
 este documento e `docs/requisitos.md`.
 
@@ -19,7 +20,7 @@ este documento e `docs/requisitos.md`.
 
 Lucas é **QA Engineer sênior** — forte em BDD/Gherkin, Playwright, Selenium,
 testes de API, SQL e CI/CD — e está **começando em desenvolvimento**
-(Java, SQL, HTML/CSS básico). Está estudando o método "Anti-Vibe Coding" de
+em desenvolvimento web (React JS, Nest JS). Está estudando o método "Anti-Vibe Coding" de
 Fábio Akita: disciplina de engenharia de software em vez de "prompt e reza".
 
 Diretrizes para qualquer IA atuando aqui:
@@ -35,17 +36,21 @@ Diretrizes para qualquer IA atuando aqui:
 
 ## 3. Stack tecnológica (decidida)
 
-- **Backend:** Java 21 + Spring Boot 3, Spring Data JPA, Spring Security (JWT),
-  PostgreSQL.
-- **Frontend:** Vue 3 (Composition API) + Vite + JavaScript, Pinia para estado.
-  Biblioteca de drag-and-drop e abordagem de CSS a decidir no Dia 2.
-- **Testes backend:** JUnit 5, Mockito, Testcontainers (Postgres real em testes
-  de integração).
-- **Testes frontend:** Vitest + Vue Test Utils (unitário/componente),
+- **Backend:** Node.js + NestJS + TypeScript, TypeORM, PostgreSQL, autenticação
+  com JWT (`@nestjs/jwt` + Passport).
+- **Frontend:** React 18 + TypeScript + Vite, Redux Toolkit para estado
+  global (ainda não conectado — sem slices reais até existir estado de
+  verdade a gerenciar, ver seção 7.4), `FullCalendar` (`@fullcalendar/react`
+  + `timegrid` + `interaction`, todos fixados em `6.1.21`) para o grid
+  semanal. CSS puro (arquivos `.css`, sem CSS-in-JS nem framework de UI).
+- **Testes backend:** Vitest (padrão do NestJS a partir da v12) + Supertest
+  para testes de integração de endpoints, Testcontainers (Postgres real em
+  testes de integração).
+- **Testes frontend:** Vitest + React Testing Library (unitário/componente),
   Playwright para E2E (ferramenta que o Lucas já domina).
-- **Infra local:** Docker Compose. Nesta fase (Dia 1) só o banco de dados e uma
-  ferramenta de administração (Adminer) rodam em container — os serviços de
-  aplicação (backend/frontend) entram no Dia 2, quando o esqueleto existir.
+- **Infra local:** Docker Compose com 4 serviços — `postgres`, `adminer`,
+  `backend` e `frontend` (backend e frontend rodam com hot-reload via bind
+  mount, desde o Dia 2).
 
 ## 4. Regras de engenharia (não negociáveis)
 
@@ -76,22 +81,297 @@ Diretrizes para qualquer IA atuando aqui:
 
 - [x] **Dia 1 — Isolamento e Governança:** sandbox Docker (Postgres + Adminer),
       este arquivo, estrutura inicial do repositório, requisitos levantados.
-- [ ] Dia 2 — Fundação e Estrutura (arquitetura detalhada, esqueleto
-      backend/frontend, Docker Compose completo, variáveis de ambiente)
-- [ ] Dia 3 — Muralha de Testes (TDD)
-- [ ] Dia 4 — Codificação
+- [x] **Dia 2 — Fundação e Estrutura:** esqueleto `backend/` (NestJS +
+      TypeScript, módulos vazios `AuthModule`/`AtividadesModule`/
+      `AlocacoesModule`, TypeORM conectado ao Postgres) e `frontend/` (React +
+      TypeScript + Vite, Redux Toolkit com store vazia); Docker Compose
+      completo com os 4 serviços; variáveis de ambiente centralizadas em
+      `.env`/`.env.example`. Nenhuma entidade, endpoint ou tela de negócio foi
+      implementada ainda — isso é o Dia 4, depois da Muralha de Testes.
+- [x] **Dia 3 — Muralha de Testes (TDD):** todos os cenários Gherkin de
+      `docs/requisitos.md` viraram testes que falham — 17 testes e2e no
+      backend (Vitest + Supertest + Testcontainers, 5 arquivos por Feature) e
+      7 arquivos de componente no frontend (Vitest + React Testing Library).
+      Todos falham hoje por falta de implementação (404 no backend, módulo
+      inexistente no frontend) — isso é esperado e intencional. Cenários de
+      arrastar/redimensionar via drag-and-drop não têm teste de UI ainda
+      (biblioteca em aberto, seção 7) — só o efeito no backend foi testado.
+      Contrato que emergiu dos testes: ver seção 7.3.
+- [x] **Dia 4 — Codificação:** toda a muralha do Dia 3 está verde — 16/16
+      testes e2e no backend, 28/28 testes de componente no frontend, build
+      limpo (`tsc`/`nest build`/`vite build`) e validação manual via
+      `docker compose up` (registrar → login → criar atividade → criar
+      alocação → listar, tudo funcionando ponta a ponta). Detalhes e
+      armadilhas encontradas: ver seção 7.4.
+- [x] **Grid semanal com FullCalendar, fora da numeração dos dias
+      (17/09/2026):** pool numa lateral direita com cards, linhas do
+      time-grid visíveis, redimensionar funcionando de verdade, seletores de
+      granularidade e início da semana — tudo via `FullCalendar`
+      (`@fullcalendar/react` + `timegrid` + `interaction`). Verificado
+      manualmente num navegador real: criar (arrastar da pool), mover,
+      redimensionar, menu de opções (Duplicar/Excluir/Excluir atividade) com
+      confirmação. Detalhes e armadilhas: ver seção 7.6.
+      **Testes automatizados do grid ficaram de fora desta rodada** (pedido
+      explícito do Lucas); os testes dos demais componentes
+      (`AtividadeItem`, `ConfirmDialog`, `LimparCalendarioButton`,
+      `useTema`, `TelaAutenticada`) continuam passando (15/15).
 - [ ] Dia 5 — Otimização e Refatoração
 - [ ] Dia 6 — Interface de Saída
 - [ ] Dia 7 — Deploy e Esteira de CD
 
-## 7. Decisões em aberto (a resolver no Dia 2)
+## 7. Decisões em aberto
 
-- Biblioteca de drag-and-drop no Vue (ex.: `vuedraggable`, ou implementação
-  nativa com HTML5 Drag and Drop API).
-- Estratégia de responsividade para uso futuro em celular (PWA vs. app nativo
-  futuro).
-- Regra de exclusão: apagar uma Atividade da pool remove todas as suas
-  Alocações? (assumido "sim" em `docs/requisitos.md`, a confirmar).
+- Nenhuma no momento. A última pendente (abordagem de CSS) foi resolvida em
+  17/09/2026 — CSS puro (arquivos `.css`), ver seção 7.6.
+
+### 7.0. Decisões resolvidas por Lucas (16/09/2026)
+
+- **Biblioteca de drag-and-drop e grid semanal:** `FullCalendar`
+  (`@fullcalendar/react` + `timegrid` + `interaction`). Ver seção 7.6 para os
+  detalhes técnicos.
+- **Responsividade mobile:** fora de escopo por enquanto — nem PWA nem app
+  nativo nesta fase do projeto.
+- **Exclusão de Atividade:** confirmado — remove todas as suas Alocações
+  (clones). A interface deve exibir uma mensagem de confirmação antes de
+  excluir, por ser uma ação destrutiva em cascata.
+- **Exclusão de um clone (Alocação) individual:** não afeta os demais clones
+  nem a Atividade mestre na pool — é uma exclusão isolada.
+- **Nova feature — "Limpar calendário":** botão que remove todas as Alocações
+  (clones) de uma vez, preservando as Atividades na pool. Segue o mesmo
+  padrão de confirmação das demais ações destrutivas em cascata.
+- Detalhamento comportamental dessas regras (e outras decisões de domínio,
+  como nomes únicos de Atividade, granularidade meramente visual e
+  sobreposição de alocações permitida) está nos cenários Gherkin de
+  `docs/requisitos.md`.
+
+### 7.2. Notas técnicas do Dia 2
+
+- O template atual do NestJS (v12) gera o projeto em ESM (`"type": "module"`
+  no `package.json`), com imports relativos terminados em `.js` mesmo em
+  arquivos `.ts` — é o padrão do template, não uma escolha manual.
+- `npm install` no `backend/` pode falhar com o erro
+  `Cannot read properties of null (reading 'edgesOut')` — é um bug conhecido
+  do resolvedor de dependências do npm 10.x com peer deps opcionais do
+  Vitest/NestJS mais recentes. Solução: usar `npm install --legacy-peer-deps`
+  neste projeto (inclusive nos `Dockerfile.dev`).
+- `synchronize: true` no TypeORM (`backend/src/config/database.config.ts`) é
+  temporário, só para Dia 2/3 sem migrations. Deve virar `false` a partir do
+  Dia 4, quando entram migrations versionadas.
+- `npm install` no `frontend/` também pode precisar de `--testing-library/dom`
+  como dependência explícita (peer do React Testing Library que o npm às
+  vezes não resolve sozinho) e do mesmo `--legacy-peer-deps` do backend.
+
+### 7.3. Contrato proposto pela Muralha de Testes (Dia 3)
+
+Escrever os testes antes do código exigiu decidir a "forma" da API e dos
+componentes. São decisões de implementação, não de arquitetura — mas como
+nasceram sem uma rodada de confirmação prévia, ficam registradas aqui para
+revisão antes do Dia 4. Qualquer uma pode ser renomeada/ajustada sem custo,
+já que nada foi implementado ainda.
+
+**API REST (backend), todas as rotas de Atividade/Alocação exigem
+`Authorization: Bearer <token>`:**
+
+| Rota | Efeito |
+| --- | --- |
+| `POST /auth/registrar` | Cria usuário `{ email, senha }` |
+| `POST /auth/login` | Retorna `{ accessToken }` |
+| `POST /atividades` | Cria `{ nome, cor }` — 409 se nome duplicado |
+| `GET /atividades` | Lista as atividades do usuário autenticado |
+| `PATCH /atividades/:id` | Edita `{ nome?, cor? }` |
+| `DELETE /atividades/:id` | Remove a atividade e cascade nas suas alocações |
+| `POST /alocacoes` | Cria `{ atividadeId, diaSemana, horaInicio, duracaoMinutos }` — também é como o frontend implementa "Duplicar" (repete os campos do card original) |
+| `GET /alocacoes` | Lista as alocações do usuário, cada uma com `atividade: { id, nome, cor }` embutido |
+| `PATCH /alocacoes/:id` | Move/redimensiona `{ diaSemana?, horaInicio?, duracaoMinutos? }` |
+| `DELETE /alocacoes/:id` | Remove só aquele clone |
+| `DELETE /alocacoes` (sem id) | "Limpar calendário" — remove todas as alocações do usuário |
+
+Decisão de modelagem central: **Alocação não duplica nome/cor** — ela só
+guarda `atividadeId` e seus próprios `diaSemana`/`horaInicio`/`duracaoMinutos`;
+nome e cor sempre vêm de um join com Atividade. É isso que faz "editar
+propaga" e "editar NÃO propaga" (Suposições, item 1) saírem de graça da
+modelagem, sem lógica extra de sincronização.
+
+Sem validação de conflito de horário: duas alocações podem se sobrepor
+livremente (Suposições, item 6) — a resolução visual da sobreposição é
+inteiramente do frontend.
+
+**Componentes propostos (frontend, ainda não implementados):**
+
+- `ConfirmDialog` — diálogo de confirmação reutilizável (usado por
+  `AtividadeItem`, `CardAlocacao` e `LimparCalendarioButton`).
+- `AtividadeItem` — item da pool com botão excluir + confirmação.
+- `CardAlocacao` — card do grid; clicar abre menu com Duplicar/Excluir/Excluir
+  atividade; marca sobreposição via atributo `data-sobreposicao` com valores
+  `"reduzido"`, `"metade-esquerda"` ou `"metade-direita"`.
+- `GradeSemanal` — recebe `diaInicioSemana`, `granularidadeMinutos` e
+  `alocacoes` como props; é só apresentação (não sabe nada de API).
+- `useTema` — hook com `matchMedia('(prefers-color-scheme: dark)')` como
+  padrão e `localStorage` para a escolha manual do usuário.
+- `TelaAutenticada` — alterna entre children e tela de login via uma flag
+  `autenticado`, sem depender de biblioteca de rotas (ainda não decidida).
+
+### 7.4. Notas técnicas do Dia 4
+
+- **`PassportModule` precisa ser registrado em todo módulo que usa
+  `JwtAuthGuard`**, não só no `AuthModule` — descoberta ao implementar
+  `AtividadesModule`/`AlocacoesModule`. Cada módulo Nest tem seu próprio
+  container de DI; `AuthGuard('jwt')` depende de um provider
+  (`AuthModuleOptions`) que só existe onde `PassportModule.register(...)`
+  (não a versão sem argumentos) foi importado.
+- **`ConfigModule` com `envFilePath: ['.env', '../.env']`**: o backend lê
+  `JWT_SECRET` e as credenciais do Postgres do `.env` da raiz do repo. Dentro
+  do Docker Compose isso nem é usado (as variáveis já vêm do `environment:`
+  do serviço); rodando localmente de dentro de `backend/` (ex.:
+  `npm run test:e2e`), o `'../.env'` reaproveita o mesmo arquivo em vez de
+  duplicar segredos. O Testcontainers ainda funciona porque `dotenv` nunca
+  sobrescreve uma variável que o processo já tinha definido.
+- **Modelagem sem duplicação, na prática**: `Alocacao` guarda só
+  `atividadeId`; toda resposta da API busca `nome`/`cor` via join com
+  `Atividade` (`AlocacoesService.paraResposta`). Isso confirmou a hipótese da
+  seção 7.3 — "editar propaga"/"editar não propaga" não precisaram de nenhuma
+  lógica extra de sincronização.
+- **`usuarioId` não deve vazar nas respostas**: a primeira versão de
+  `AtividadesService` devolvia a entidade `Atividade` inteira (incluindo
+  `usuarioId`) direto do TypeORM. Corrigido com um mapeador `paraResposta`
+  que só expõe `{ id, nome, cor }`, igual ao que `AlocacoesService` já fazia.
+- **Removido o boilerplate do Nest CLI** (`AppController`, `AppService`,
+  `app.controller.spec.ts`, `test/app.e2e-spec.ts`) — era o "Hello World"
+  gerado no Dia 2, não testava nada do domínio e falhava fora do Docker por
+  tentar resolver o host `postgres` (só existe na rede do Compose).
+- **Frontend: `tsc -b` não conhecia os globais do Vitest** (`describe`,
+  `it`, `expect`, `vi`) porque `tsconfig.app.json` (usado no build de
+  produção) incluía os arquivos `*.test.tsx` sem os tipos certos. Solução:
+  `tsconfig.app.json` agora exclui `*.test.ts(x)`, e um novo
+  `tsconfig.vitest.json` (com `types: ["vitest/globals", ...]`) cobre só os
+  testes — referenciado em `tsconfig.json` para o `tsc -b` continuar
+  validando os dois.
+- `npm install` no `frontend/` também precisou de `@testing-library/dom`
+  como dependência explícita (peer do React Testing Library).
+- **Redux Toolkit sem slices ainda dispara erro em runtime.**
+  `configureStore({ reducer: {} })` (um reducer vazio) é rejeitado em tempo
+  de execução pelo Redux Toolkit ("Store does not have a valid reducer").
+  Como nenhuma slice existe ainda (o app usa `useState` local), a correção
+  foi remover o `<Provider>`/`store.ts`/`hooks.ts` até existir pelo menos uma
+  slice de verdade pra colocar nele — criar um store vazio "por precaução"
+  é o tipo de infra prematura que a regra 5 (seção 4) pede pra evitar. Redux
+  Toolkit continua sendo a escolha de estado global (seção 3); só a criação
+  do store fica pra quando houver estado de fato pra gerenciar.
+
+### 7.6. FullCalendar: decisões e notas técnicas
+
+**Lib escolhida:** `FullCalendar` (`@fullcalendar/react` +
+`@fullcalendar/timegrid` + `@fullcalendar/interaction`), depois de uma
+pesquisa comparando com `react-big-calendar`, `Schedule-X`, `Toast UI
+Calendar`, `react-calendar-timeline` e `MUI X Scheduler`. Nenhuma delas foi
+feita para um quadro semanal recorrente sem datas reais, mas o FullCalendar
+resolve o essencial de graça, na versão MIT (não precisou de nada Premium):
+`timeGridWeek` (linhas de horário), `slotDuration` (granularidade),
+`firstDay` (dia de início), `eventResize`/`eventDrop` (mover/redimensionar) e
+`Draggable` externo (arrastar da pool).
+
+**⚠️ Pin de versão importante:** `@fullcalendar/core` e `@fullcalendar/react`
+têm `latest` em `7.1.0`, mas `timegrid`/`daygrid`/`interaction` nunca saíram
+de release candidate na v7 (`7.0.0-rc.0`) — o `latest` deles ainda é
+`6.1.21`. Misturar as duas séries quebra (o core v7 nem exporta mais
+`@fullcalendar/core/internal`, que os plugins v6 exigem). **Todos os pacotes
+FullCalendar devem ficar fixados em `6.1.21`** — não usar `^` ou `latest` até
+os plugins alcançarem a v7 estável.
+
+**Modelagem sem data real:** o componente ancora tudo numa semana falsa fixa
+(`ANCORA_DOMINGO`, uma segunda-feira/domingo arbitrário de 2024) com
+`validRange` travando a navegação nela e `dayHeaderContent` escondendo o
+número da data (mostra só o nome do dia via `NOME_EXIBICAO_DIA_SEMANA`). Uma
+`Alocacao` vira um evento com `start`/`end` calculados a partir dessa âncora
++ `diaSemana` + `horaInicio`; ao mover/redimensionar, o dia da semana e o
+horário são extraídos de volta do `Date` resultante e a data em si é
+descartada — é só "papel" para o FullCalendar calcular posições.
+
+**Sobreposição de alocações:** usa o layout padrão do FullCalendar (colunas
+lado a lado, proporcional ao número de alocações sobrepostas) — decisão
+confirmada com Lucas (ver `docs/requisitos.md`, item 6 das Suposições e os
+cenários de "Sobreposição..." na Feature "Alocar atividades no calendário").
+
+**Menu de opções do card (Duplicar/Excluir/Excluir atividade):** não existe
+como recurso pronto do FullCalendar — implementado por cima via `eventClick`
+(abre um menu posicionado nas coordenadas do clique) em vez de um botão
+dentro do evento, mais simples que brigar com o `eventContent` para um menu
+interativo.
+
+**Armadilhas encontradas verificando no navegador** (mesma limitação de
+sempre: nada disso é testável de forma confiável em jsdom/RTL, que não tem
+layout real):
+- O motor de arrastar do FullCalendar (`@fullcalendar/interaction`) é
+  baseado em **`MouseEvent`/`TouchEvent` legados, não em `PointerEvent`**.
+  Um script de diagnóstico via `PointerEvent` sintético (com
+  `isPrimary: true`) não tinha efeito nenhum — precisou usar `MouseEvent`
+  sintético em vez disso.
+- A alça de redimensionar (`.fc-event-resizer`) só fica visível/clicável via
+  **`:hover` real do CSS** — e `:hover` só é alterado por movimento de
+  ponteiro genuíno reconhecido pelo motor de renderização do navegador,
+  nunca por um `element.dispatchEvent(new MouseEvent(...))` feito via
+  JavaScript de página. Só a ferramenta de automação de verdade (`hover` +
+  `left_click_drag`, que usam entrada de baixo nível via CDP) conseguiu
+  revelar e arrastar a alça.
+- Ao calcular a posição de um alvo de drop, cuidado com o **scroll interno
+  do time-grid** (`scrollTime` deixa o topo da coluna, à meia-noite,
+  posicionado fora da viewport — `getBoundingClientRect().top` de uma coluna
+  inteira pode vir negativo). Usar a posição de uma célula de horário
+  específica e visível (`.fc-timegrid-slot[data-time="09:00:00"]`), não o
+  topo da coluna inteira.
+- Disparar uma sequência longa de `mousemove` sintéticos (30 eventos num
+  loop apertado) enquanto o alvo estava fora da viewport (coordenada Y
+  negativa) travou a aba por 45s. Preferir poucos passos, sempre com
+  coordenadas dentro da viewport visível.
+
+### 7.7. Correções pós-FullCalendar (17/09/2026)
+
+Lucas encontrou 4 defeitos usando o calendário de verdade, todos corrigidos
+e reverificados manualmente no navegador:
+
+1. **Nomes dos dias errados ao trocar o início da semana.** Causa raiz: o
+   FullCalendar calcula "a semana atual" como "os 7 dias a partir de
+   `firstDay`, contendo a data de referência atual". A data de referência
+   estava fixa numa âncora absoluta (um domingo); ao mudar `firstDay` para
+   segunda, "a semana de 7 dias começando numa segunda que contém aquele
+   domingo" é uma janela de datas *diferente* da fixada — dessincronizando
+   cabeçalho e eventos. Corrigido calculando a data de referência (e a data
+   de cada evento) sempre em função do `diaInicioSemana` atual
+   (`dataDeReferencia` em `CalendarioSemanal.tsx`), e navegando o calendário
+   explicitamente via `calendarApi.gotoDate(...)` num `useEffect` — porque
+   `initialDate` só é lido na primeira montagem (é uma prop "inicial", o
+   FullCalendar não reage a mudanças nela depois).
+   **Correção 2 (18/09/2026):** a primeira versão de `dataDeReferencia`
+   deslocava a partir de uma âncora fixa numa segunda-feira usando a fórmula
+   errada — só "dava certo" quando `diaInicioSemana` era exatamente
+   "segunda-feira" (coincidência, porque a âncora já era uma segunda), e
+   para qualquer outra combinação calculava uma data com o dia da semana
+   errado. Sintoma: trocar o início da semana fazia os cards já existentes
+   mudarem de dia. Corrigido calculando primeiro o início da semana exibida
+   a partir de uma âncora sempre-correta (`dataAbsolutaDoDia`, um domingo
+   fixo + deslocamento em dias), e só depois deslocando a partir *dele* — a
+   prova de correção: `dataDeReferencia(dia, calquerInicio).getDay()` tem
+   que ser sempre exatamente `paraNumeroDiaSemana(dia)`, para qualquer
+   combinação, o que a primeira versão não garantia e a segunda garante.
+   Reverificado manualmente: criar cards em 4 dias diferentes, trocar o
+   início da semana pra frente e pra trás, e confirmar que cada card
+   continua na mesma coluna visual o tempo todo.
+2. **Scroll resetava ao mover/criar/redimensionar um card.** A opção
+   `scrollTimeReset` (default `true`) faz o FullCalendar voltar o scroll pro
+   horário de `scrollTime` sempre que considera as datas exibidas "novas".
+   Corrigido com `scrollTimeReset={false}`.
+3. **Modal de confirmação atrás do calendário.** `position: fixed` normalmente
+   escapa pra viewport, mas isso quebra se algum ancestral cria um novo
+   "containing block" (transform/filter/contain/etc.) — não valia a pena
+   caçar qual elemento exatamente causava isso. Corrigido de forma definitiva
+   renderizando `ConfirmDialog` (e o menu de opções do card) via
+   `createPortal(..., document.body)`, prática padrão pra esse tipo de
+   overlay em React.
+4. **Não dava pra criar atividade nova com cor.** Não era um bug — a feature
+   nunca tinha sido construída (só existiam as 3 atividades semeadas no
+   `App.tsx`). Criado `NovaAtividadeForm.tsx` (nome + `<input type="color">`)
+   dentro da `PoolLateral`, reaproveitando a mesma checagem de nome único já
+   usada no backend (Suposições, item 5).
 
 ## 8. Requisitos funcionais
 

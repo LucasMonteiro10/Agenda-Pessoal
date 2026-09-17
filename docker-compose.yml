@@ -28,9 +28,50 @@ services:
     depends_on:
       - postgres
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: cronograma-backend
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-cronograma}
+      POSTGRES_USER: ${POSTGRES_USER:-cronograma_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      BACKEND_PORT: ${BACKEND_PORT:-3000}
+      JWT_SECRET: ${JWT_SECRET:-changeme-em-producao}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: cronograma-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
 
-# Nota (Dia 1): apenas a infraestrutura de dados roda em container por enquanto.
-# Os serviços de backend (Spring Boot) e frontend (Vue) entram aqui no Dia 2,
-# quando o esqueleto dos projetos existir.
+# Nota (Dia 2): backend (NestJS) e frontend (React) agora também rodam em
+# container, com hot-reload via bind mount do código-fonte. O volume anônimo
+# em /app/node_modules evita que o node_modules do host (ou a ausência dele)
+# sobrescreva o que foi instalado dentro da imagem.

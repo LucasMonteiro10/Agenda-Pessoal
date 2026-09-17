@@ -11,23 +11,39 @@ visualmente por drag-and-drop.
 
 ## Stack
 
-- **Backend:** Java 21 + Spring Boot 3 + PostgreSQL + Spring Security (JWT)
-- **Frontend:** Vue 3 + Vite
+- **Backend:** Node.js + NestJS + TypeScript + TypeORM + PostgreSQL + JWT
+- **Frontend:** React 18 + TypeScript + Vite + Redux Toolkit (ainda não
+  conectado) + FullCalendar (grid semanal)
 
 ## Status
 
-🚧 **Dia 1 de 7 — Isolamento e Governança** concluído. Veja o roteiro completo
-e as regras do projeto em [`CLAUDE.md`](CLAUDE.md) e os requisitos funcionais
-em [`docs/requisitos.md`](docs/requisitos.md).
+🚧 **Dia 4 de 7 — Codificação** concluído: autenticação (JWT) e pool de
+atividades funcionando ponta a ponta (API + componentes React), com a
+muralha de testes do backend verde (16 testes e2e). O calendário semanal
+usa o **FullCalendar** (arrastar da pool, mover, redimensionar, seletor de
+granularidade e de dia de início da semana, tudo verificado num navegador
+real) — os testes automatizados do grid ficaram de fora desta rodada, a
+pedido do Lucas, e serão retomados depois. Veja o roteiro completo e as
+regras do projeto em [`CLAUDE.md`](CLAUDE.md) e os requisitos funcionais em
+[`docs/requisitos.md`](docs/requisitos.md).
 
-## Como rodar o ambiente de dados (Dia 1)
+## Como rodar o ambiente completo
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose up -d --build
 ```
 
 - Postgres disponível em `localhost:5432` (credenciais em `.env`)
 - Adminer (interface web do banco) em [http://localhost:8081](http://localhost:8081)
+- Backend (NestJS) em [http://localhost:3000](http://localhost:3000)
+- Frontend (React) em [http://localhost:5173](http://localhost:5173)
 
-Os projetos de backend e frontend ainda não existem — entram no Dia 2.
+Backend e frontend rodam com hot-reload (o código local é montado dentro do
+container), então editar arquivos em `backend/src` ou `frontend/src` reflete
+sem precisar reconstruir a imagem.
+
+> Se for instalar dependências manualmente com `npm install` dentro de
+> `backend/` ou `frontend/` (fora do Docker), use
+> `npm install --legacy-peer-deps` — veja a nota técnica na seção 7.2 do
+> `CLAUDE.md`.

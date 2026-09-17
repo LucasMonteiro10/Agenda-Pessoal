@@ -1,18 +1,13 @@
 # Segredos locais
 .env
 
-# Java / Maven / Gradle (backend, a partir do Dia 2)
-target/
-build/
-*.class
-*.jar
-!.mvn/wrapper/maven-wrapper.jar
-
-# Node (frontend, a partir do Dia 2)
+# Node (backend e frontend)
 node_modules/
 dist/
 *.log
 npm-debug.log*
+coverage/
+*.tsbuildinfo
 
 # IDEs
 .idea/
