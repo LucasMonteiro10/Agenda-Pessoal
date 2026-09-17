@@ -38,7 +38,7 @@ export function PoolLateral({ atividades, onExcluir, onCriar }: PoolLateralProps
 
   return (
     <aside className="pool-lateral">
-      <h2>Pool</h2>
+      <h2>Suas atividades</h2>
       <p className="pool-lateral__dica">Adicione e arraste uma atividade para o calendário.</p>
       <NovaAtividadeForm nomesExistentes={atividades.map((atividade) => atividade.nome)} onCriar={onCriar} />
       <ul ref={listaRef} className="pool-lateral__lista">

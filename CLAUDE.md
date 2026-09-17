@@ -75,7 +75,10 @@ Diretrizes para qualquer IA atuando aqui:
   Todos os clones de uma Atividade compartilham **nome e cor**. Dia, horário e
   duração são independentes por clone.
 - **Pool:** lista lateral de Atividades disponíveis para arrastar ao
-  calendário.
+  calendário. É o termo de domínio usado no código (`PoolLateral.tsx`,
+  classes `.pool-lateral*`, cenários Gherkin "Gerenciar pool de
+  atividades") — a UI a exibe como uma **barra de atividades**, com o
+  título "Suas atividades" (ver `docs/requisitos.md`, "Visão geral").
 
 ## 6. Estado atual do projeto
 

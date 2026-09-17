@@ -9,7 +9,8 @@ Dia 3 (TDD).
 
 - Não é um calendário com datas — é um **quadro semanal recorrente** (dias da
   semana, sem vínculo a uma data específica do ano).
-- Uma **pool** lateral guarda as Atividades cadastradas pelo usuário.
+- Uma **pool** lateral guarda as Atividades cadastradas pelo usuário — na UI,
+  aparece como uma **barra de atividades** com o título "Suas atividades".
 - O usuário arrasta uma Atividade da pool para o grid semanal, criando uma
   **Alocação** (clone) com dia, horário e duração próprios.
 - Cada usuário autenticado tem seu próprio cronograma (login simples).
