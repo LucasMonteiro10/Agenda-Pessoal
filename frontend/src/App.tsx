@@ -18,9 +18,9 @@ const CHAVE_ACCESS_TOKEN = 'accessToken'
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(() => localStorage.getItem(CHAVE_ACCESS_TOKEN))
   const [atividades, setAtividades] = useState<Atividade[]>([
-    { id: 'a1', nome: 'Trabalho', cor: '#3366FF' },
-    { id: 'a2', nome: 'Estudar Inglês', cor: '#33AA55' },
-    { id: 'a3', nome: 'Almoço', cor: '#FFAA00' },
+    { id: 'a1', nome: 'Trabalho', cor: '#2F4B3C' },
+    { id: 'a2', nome: 'Estudar Inglês', cor: '#93AFC7' },
+    { id: 'a3', nome: 'Almoço', cor: '#D8A15C' },
   ])
   const [alocacoes, setAlocacoes] = useState<Alocacao[]>([])
   const [diaInicioSemana, setDiaInicioSemana] = useState<DiaSemana>('domingo')
@@ -53,7 +53,10 @@ function App() {
     <TelaAutenticada autenticado={accessToken !== null} onAutenticado={autenticar} onDeslogar={deslogar}>
       <main className="app-shell">
         <header className="app-header">
-          <h1>Cronograma Pessoal</h1>
+          <div className="app-header__titulo">
+            <span className="app-header__eyebrow">Semana recorrente</span>
+            <h1>Cronograma Pessoal</h1>
+          </div>
           <SeletorConfiguracoes
             diaInicioSemana={diaInicioSemana}
             granularidadeMinutos={granularidadeMinutos}

@@ -5,7 +5,7 @@ export interface NovaAtividadeFormProps {
   onCriar: (nome: string, cor: string) => void;
 }
 
-const COR_PADRAO = '#3366ff';
+const COR_PADRAO = '#b5652b';
 
 // Cenário Gherkin: docs/requisitos.md, Feature "Gerenciar pool de
 // atividades" > "Criar uma nova atividade" e "Impedir duas atividades com o
