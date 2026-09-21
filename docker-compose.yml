@@ -44,7 +44,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-changeme-em-producao}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
     volumes:
       - ./backend:/app
       - /app/node_modules
