@@ -6,6 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
+import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
 import { NOME_EXIBICAO_DIA_SEMANA, paraDiaSemana, paraNumeroDiaSemana, type DiaSemana } from './dia-semana.ts';
 import type { Alocacao } from './tipos.ts';
 
@@ -80,6 +81,7 @@ function paraEventoFullCalendar(alocacao: Alocacao, diaInicioSemana: DiaSemana):
     end: fim,
     backgroundColor: alocacao.atividade.cor,
     borderColor: alocacao.atividade.cor,
+    textColor: paraCorDeTextoComContraste(alocacao.atividade.cor),
     extendedProps: { atividadeId: alocacao.atividade.id },
   };
 }

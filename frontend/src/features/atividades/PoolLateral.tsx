@@ -1,5 +1,6 @@
 import { Draggable } from '@fullcalendar/interaction';
 import { useEffect, useRef } from 'react';
+import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
 import { AtividadeItem, type Atividade } from './AtividadeItem.tsx';
 import { NovaAtividadeForm } from './NovaAtividadeForm.tsx';
 
@@ -28,6 +29,7 @@ export function PoolLateral({ atividades, onExcluir, onCriar }: PoolLateralProps
         title: el.dataset.nome,
         backgroundColor: el.dataset.cor,
         borderColor: el.dataset.cor,
+        textColor: el.dataset.cor ? paraCorDeTextoComContraste(el.dataset.cor) : undefined,
         duration: '01:00',
         extendedProps: { atividadeId: el.dataset.atividadeId },
       }),
