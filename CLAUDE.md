@@ -490,6 +490,21 @@ Water.css. Confirmado via DevTools que o `<link>` é removido do `<head>`
 ao autenticar (não é só uma questão de especificidade CSS escondendo o
 efeito).
 
+### 7.11. Correção no mapeamento de `BACKEND_PORT` no Docker Compose (21/09/2026)
+
+O `docker-compose.yml` mapeava `"${BACKEND_PORT:-3000}:3000"` — só o lado
+host do mapeamento de porta era configurável via `.env`; o lado do
+container ficava sempre fixo em `3000`. Isso é um bug: `backend/src/main.ts`
+faz `app.listen(process.env.BACKEND_PORT ?? 3000)`, ou seja, o NestJS
+*dentro* do container já escutava na porta customizada — então trocar
+`BACKEND_PORT` no `.env` sem trocar as duas pontas do mapeamento deixava a
+porta host apontando para o lugar errado (container continuava exposto só
+em `3000`, não na porta nova). Corrigido para
+`"${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"`, as duas pontas usando a
+mesma variável. Ver README para as portas em uso neste ambiente local
+(diferentes dos defaults do `.env.example`, usadas aqui para não conflitar
+com outros serviços já rodando na máquina).
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e
