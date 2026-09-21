@@ -44,4 +44,24 @@ describe('AtividadeItem', () => {
 
     expect(onExcluir).not.toHaveBeenCalled();
   });
+
+  // Cenário: o card da pool é preenchido com a cor da Atividade escolhida
+  // pelo usuário — sem contraste, uma cor muito clara ou muito escura deixa
+  // o nome/botão ilegíveis (mesmo cálculo usado nos cards do calendário, ver
+  // utils/cor.ts).
+  it('preenche o fundo do card com a cor da atividade e usa texto preto sobre cor clara', () => {
+    const atividadeClara = { id: 'atividade-clara', nome: 'Card Claro', cor: '#ffff66' };
+    render(<AtividadeItem atividade={atividadeClara} onExcluir={vi.fn()} />);
+
+    const card = screen.getByText('Card Claro').closest('.atividade-card');
+    expect(card).toHaveStyle({ backgroundColor: 'rgb(255, 255, 102)', color: 'rgb(0, 0, 0)' });
+  });
+
+  it('usa texto branco sobre uma cor de fundo escura', () => {
+    const atividadeEscura = { id: 'atividade-escura', nome: 'Card Escuro', cor: '#1a0033' };
+    render(<AtividadeItem atividade={atividadeEscura} onExcluir={vi.fn()} />);
+
+    const card = screen.getByText('Card Escuro').closest('.atividade-card');
+    expect(card).toHaveStyle({ backgroundColor: 'rgb(26, 0, 51)', color: 'rgb(255, 255, 255)' });
+  });
 });

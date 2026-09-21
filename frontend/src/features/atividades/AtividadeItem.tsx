@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
+import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
 
 export interface Atividade {
   id: string;
@@ -14,10 +15,10 @@ export interface AtividadeItemProps {
 
 export function AtividadeItem({ atividade, onExcluir }: AtividadeItemProps) {
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const corTexto = paraCorDeTextoComContraste(atividade.cor);
 
   return (
-    <div className="atividade-card" style={{ borderLeftColor: atividade.cor }}>
-      <span className="atividade-card__ponto" style={{ backgroundColor: atividade.cor }} aria-hidden="true" />
+    <div className="atividade-card" style={{ backgroundColor: atividade.cor, color: corTexto }}>
       <span className="atividade-card__nome">{atividade.nome}</span>
       <button
         type="button"
