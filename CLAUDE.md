@@ -536,6 +536,61 @@ do calendário".
   abrindo o menu de opções (Duplicar/Excluir/Excluir alocações), sem abrir
   o formulário por engano.
 
+### 7.13. Card de alocação: horário e título na mesma linha em cards baixos (21/09/2026)
+
+Pedido: quando o card de uma alocação só tem altura pra uma linha de texto
+(duração curta e/ou granularidade fina), horário e título devem dividir a
+mesma linha; se mesmo assim o título não couber ao lado do horário, esconder
+o horário e mostrar só o título. Cenários Gherkin em `docs/requisitos.md`,
+Feature "Alocar atividades no calendário".
+
+- **A detecção de "evento curto" do próprio FullCalendar não é confiável em
+  pixels.** A lib já tenta resolver o primeiro pedido sozinha: marca o
+  evento com a classe `fc-timegrid-event-short` (ver
+  `@fullcalendar/timegrid`) quando o considera baixo, e essa classe muda o
+  CSS pra layout em linha. Só que o cálculo interno dela
+  (`rect.span.end - rect.span.start < eventShortHeight`, `eventShortHeight`
+  = 30 por padrão) usa uma unidade interna que não bate de forma confiável
+  com a altura final renderizada — na prática, um card de **29px** de altura
+  ficou **sem** a classe (deveria ter, por estar abaixo do limiar
+  documentado de 30px). Sem a classe, o card ficava preso no layout
+  empilhado padrão sem espaço vertical pras duas linhas: o horário sozinho
+  já consumia a altura toda do frame, e o título (que tem `flex-grow:1` mas
+  nenhuma sobra de espaço) renderizava com altura zero — **sumia
+  inteiramente**, não só cortava. Corrigido decidindo isso via JS, medindo a
+  altura real renderizada do card (`ajustarLinhaUnica` em
+  `CalendarioSemanal.tsx`) — e a classe própria da lib foi neutralizada no
+  CSS (`App.css`) pra não haver duas fontes de verdade competindo pelo mesmo
+  layout.
+- **O `frame.scrollWidth` nunca "estoura" pra detectar overflow do título** —
+  essa foi a segunda armadilha, depois de corrigir a primeira. A primeira
+  versão comparava `frame.scrollWidth` com `frame.clientWidth` pra decidir
+  se horário+título cabiam juntos, mas o container do título tem
+  `min-width: 0` + `overflow: hidden` (necessário pro texto poder truncar em
+  vez de estourar a linha) — e um item flex encolhido dessa forma nunca
+  aumenta o `scrollWidth` do pai, mesmo com o próprio texto sendo cortado no
+  meio de uma palavra. A medição certa é no **título em si**:
+  `titulo.scrollWidth > titulo.clientWidth` (com o horário visível durante a
+  medição, já que é ele quem "rouba" espaço do título via flexbox) — só
+  assim dá pra saber se o texto truncaria com o horário do lado.
+- **Card com o horário escondido usa `ResizeObserver`, não recalcula só na
+  montagem.** A mesma alocação pode entrar/sair do modo "uma linha só"
+  conforme a coluna do dia muda de largura (outra alocação sobreposta no
+  mesmo horário, redimensionar a janela) ou de altura (duração muda por
+  redimensionar o card, ou a granularidade selecionada muda o espaçamento
+  das linhas) — sem que o card em si seja recriado. `eventDidMount`/
+  `eventWillUnmount` registram/desregistram um `ResizeObserver` por card
+  (`CalendarioSemanal.tsx`), que já dispara uma primeira medição sozinho ao
+  começar a observar (não precisou de uma chamada manual separada).
+- Verificado manualmente no navegador (limitação de sempre: layout real não
+  é testável em jsdom/RTL, ver seção 7.6) — com granularidade de 1 hora
+  (fazendo o card padrão de 60 min renderizar como uma linha só): atividade
+  "Chá" mostrou `09:00 - 10:00 — Chá` numa linha só; atividade "Reunião de
+  alinhamento semanal" mostrou só o título, sem o horário; voltando a
+  granularidade pra 15 minutos (card fica alto o suficiente pras duas
+  linhas), ambas voltaram ao layout empilhado padrão, título completo
+  visível na segunda linha.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

@@ -1,4 +1,4 @@
-import type { EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
+import type { EventClickArg, EventDropArg, EventInput, EventMountArg } from '@fullcalendar/core';
 import type { DateClickArg, EventReceiveArg, EventResizeDoneArg } from '@fullcalendar/interaction';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
@@ -96,6 +96,52 @@ function extrairDiaEHora(data: Date): { diaSemana: DiaSemana; horaInicio: string
   return { diaSemana, horaInicio };
 }
 
+// Altura mínima (px) pra caber horário numa linha e título embaixo, no
+// layout empilhado padrão — abaixo disso as duas linhas não cabem no card.
+// Calibrado nos tamanhos de fonte usados aqui (11px no horário, 14px no
+// título, ver App.css): a soma das duas linhas fica em ~32-35px.
+//
+// O FullCalendar tem uma detecção própria de "evento curto"
+// (`fc-timegrid-event-short`, ver @fullcalendar/timegrid), mas o limiar dela
+// é calculado num sistema de unidades interno, não na altura final
+// renderizada em pixels — na prática, um card de 29px de altura ficou sem
+// essa classe (o limiar documentado é 30px), preso no layout empilhado sem
+// espaço pras duas linhas: o título ficava com altura zero e sumia
+// (`.fc-event-title-container` tem `flex-grow:1`, mas sem sobra de espaço
+// vertical o resultado é 0). Por isso a decisão aqui é feita medindo a
+// altura real renderizada, não a classe da lib (que é neutralizada em
+// App.css, pra não conflitar com esta).
+const ALTURA_MINIMA_PARA_DUAS_LINHAS_PX = 34;
+
+// Card "de uma linha só": horário e título dividem a mesma linha
+// (`.fc-event--linha-unica`, ver App.css) em vez do layout padrão empilhado.
+// Se mesmo assim não couberem lado a lado, esconde o horário e deixa o
+// título ocupar a linha inteira — é o único ajuste que precisa de JS (o
+// resto — decidir empilhado vs. mesma linha — é só CSS a partir da classe).
+function ajustarLinhaUnica(elementoDoEvento: HTMLElement) {
+  const frame = elementoDoEvento.querySelector<HTMLElement>('.fc-event-main-frame');
+  const horario = elementoDoEvento.querySelector<HTMLElement>('.fc-event-time');
+  const titulo = elementoDoEvento.querySelector<HTMLElement>('.fc-event-title');
+  if (!frame || !horario || !titulo) return;
+
+  const linhaUnica = frame.clientHeight > 0 && frame.clientHeight < ALTURA_MINIMA_PARA_DUAS_LINHAS_PX;
+  elementoDoEvento.classList.toggle('fc-event--linha-unica', linhaUnica);
+
+  if (!linhaUnica) {
+    horario.style.display = '';
+    return;
+  }
+
+  // Mede com o horário visível: é ele quem toma espaço do título via
+  // flexbox (título tem `flex-shrink` + `min-width:0`), então o frame em si
+  // nunca "estoura" — quem precisa ser medido é o próprio título
+  // (`scrollWidth` maior que `clientWidth` = o texto truncaria com o
+  // horário ocupando espaço ao lado).
+  horario.style.display = '';
+  const tituloTruncaria = titulo.scrollWidth > titulo.clientWidth;
+  horario.style.display = tituloTruncaria ? 'none' : '';
+}
+
 export interface CalendarioSemanalProps {
   diaInicioSemana: DiaSemana;
   granularidadeMinutos: number;
@@ -142,6 +188,12 @@ export function CalendarioSemanal({
     null,
   );
   const calendarioRef = useRef<FullCalendar>(null);
+  // Um ResizeObserver por card: a mesma alocação pode alternar entre "cabe
+  // horário e título juntos" e "só título" conforme a coluna do dia muda de
+  // largura (sobreposição com outra alocação, redimensionar a janela) ou de
+  // altura (duração/granularidade mudam, entrando ou saindo do modo
+  // `fc-timegrid-event-short`) — sem recriar o card.
+  const observadoresRef = useRef(new Map<HTMLElement, ResizeObserver>());
 
   // `initialDate`/`initialView` só se aplicam na primeira renderização — o
   // FullCalendar não "escuta" mudanças nessas props depois de montado (por
@@ -198,6 +250,17 @@ export function CalendarioSemanal({
     setEspacoVazioClicado(extrairDiaEHora(arg.date));
   }
 
+  function aoMontarEvento(arg: EventMountArg) {
+    const observer = new ResizeObserver(() => ajustarLinhaUnica(arg.el));
+    observer.observe(arg.el);
+    observadoresRef.current.set(arg.el, observer);
+  }
+
+  function aoDesmontarEvento(arg: EventMountArg) {
+    observadoresRef.current.get(arg.el)?.disconnect();
+    observadoresRef.current.delete(arg.el);
+  }
+
   return (
     <div className="calendario-semanal">
       <FullCalendar
@@ -233,6 +296,8 @@ export function CalendarioSemanal({
         eventResize={aoRedimensionar}
         eventClick={aoClicarEvento}
         dateClick={aoClicarEspacoVazio}
+        eventDidMount={aoMontarEvento}
+        eventWillUnmount={aoDesmontarEvento}
       />
 
       {menu &&

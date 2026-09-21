@@ -124,6 +124,19 @@ Funcionalidade: Alocar atividades no grid semanal
     Quando eu crio outra alocação de "Reunião" na segunda-feira das 10:00 às 11:00
     Então ambas as alocações devem coexistir no mesmo dia e horário
     E ambos os cards devem ser exibidos lado a lado, sem bloquear a criação
+
+  Cenário: Card de alocação baixo demais pra duas linhas mostra horário e título na mesma linha
+    Dado que a altura do card de uma alocação só cabe uma linha de texto
+      (combinação de duração curta e/ou granularidade fina o suficiente)
+    Quando o card é exibido
+    Então o horário e o título da atividade devem aparecer lado a lado, na mesma linha
+
+  Cenário: Título grande demais nessa linha única esconde o horário
+    Dado que o card está no cenário anterior (uma linha só)
+    E o título da atividade é longo o suficiente pra não caber ao lado do horário
+    Quando o card é exibido
+    Então o horário deve ficar oculto
+    E o título completo (ou o máximo dele, com reticências) deve ocupar a linha inteira
 ```
 > Nota: a exibição de alocações sobrepostas segue o layout padrão do
 > FullCalendar (colunas lado a lado) — ver item 6 de "Suposições e decisões
@@ -132,6 +145,12 @@ Funcionalidade: Alocar atividades no grid semanal
 > Nota: a granularidade é só uma referência visual das linhas do grid — não
 > força snap nem duração mínima. Ver item 2 de "Suposições e decisões de
 > negócio".
+>
+> Nota: os dois cenários de layout do card (uma linha vs. horário oculto)
+> não têm teste automatizado — dependem de layout real (altura/largura
+> renderizada), que o jsdom/RTL não reproduz (mesma limitação já registrada
+> pros cards de drag-and-drop, CLAUDE.md seção 7.6). Verificados manualmente
+> no navegador; decisões técnicas em CLAUDE.md, seção 7.13.
 
 ## Feature: Criar atividade a partir de um espaço vazio do calendário
 

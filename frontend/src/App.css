@@ -136,6 +136,49 @@
   opacity: 0.85;
 }
 
+/* Card de alocação "de uma linha só" (ver ajustarLinhaUnica em
+   CalendarioSemanal.tsx): horário e título dividem a mesma linha em vez do
+   layout padrão empilhado (horário numa linha, título embaixo). Quem decide
+   quando aplicar a classe é o JS, medindo a altura real renderizada — por
+   isso a detecção própria do FullCalendar (`fc-timegrid-event-short`) é
+   neutralizada aqui, pra não haver duas fontes de verdade competindo (o
+   limiar dela não corresponde de forma confiável à altura em pixels, ver o
+   comentário de ALTURA_MINIMA_PARA_DUAS_LINHAS_PX). */
+.calendario-semanal .fc-timegrid-event-short .fc-event-main-frame {
+  flex-direction: column;
+  overflow: visible;
+}
+
+.calendario-semanal .fc-timegrid-event-short .fc-event-time::after {
+  content: none;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-main-frame {
+  flex-direction: row;
+  align-items: baseline;
+  overflow: hidden;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-time {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-time::after {
+  content: '\00a0—\00a0';
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-title-container {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Pool lateral (direita) */
 
 .pool-lateral {
