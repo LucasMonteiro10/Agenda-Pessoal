@@ -505,6 +505,37 @@ mesma variável. Ver README para as portas em uso neste ambiente local
 (diferentes dos defaults do `.env.example`, usadas aqui para não conflitar
 com outros serviços já rodando na máquina).
 
+### 7.12. Criar atividade a partir de um clique no calendário (21/09/2026)
+
+Nova feature: clicar num espaço vazio do grid (não num card existente) abre
+um formulário pedindo nome e cor — ao confirmar, cria a Atividade **e** já
+aloca no dia/horário clicado, numa única ação. Cenários Gherkin em
+`docs/requisitos.md`, Feature "Criar atividade a partir de um espaço vazio
+do calendário".
+
+- **`dateClick` (do `@fullcalendar/interaction`, já importado antes) só
+  dispara num espaço vazio** — clicar num card dispara `eventClick` em vez
+  disso, sem também disparar `dateClick`. Não precisou de nenhuma lógica pra
+  diferenciar "clique no card" de "clique no vazio": a lib já resolve isso.
+  Guarda `if (arg.allDay) return` por precaução (`allDaySlot={false}` já
+  devia impedir isso, mas evita abrir o formulário sem horário de verdade se
+  a lib um dia passar a disparar a partir de outra região clicável).
+- **Regra de nome único extraída pra `validarNomeAtividade.ts`**
+  (`features/atividades/`), compartilhada entre `NovaAtividadeForm` (pool) e
+  o novo `NovaAtividadeDialog` (calendário) — evita a regra divergir entre
+  os dois formulários de criação de Atividade que passaram a existir.
+- **Duração padrão da alocação criada: 60 minutos**, igual à alocação criada
+  ao arrastar da pool (`App.tsx`) — mesma convenção, sem novo conceito.
+- **`NovaAtividadeDialog`** segue o mesmo padrão de portal pro `<body>` do
+  `ConfirmDialog` (nasce dentro da árvore do FullCalendar, sujeito ao
+  contexto de empilhamento interno da lib) e reaproveita as mesmas classes
+  CSS do `ConfirmDialog`/`NovaAtividadeForm` — sem CSS novo.
+- Testado manualmente no navegador: clique em espaço vazio abre o
+  formulário com foco no campo nome; confirmar cria a atividade na pool E
+  a alocação no dia/hora clicado; clicar num card existente continua
+  abrindo o menu de opções (Duplicar/Excluir/Excluir alocações), sem abrir
+  o formulário por engano.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

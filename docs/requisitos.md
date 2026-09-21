@@ -133,6 +133,40 @@ Funcionalidade: Alocar atividades no grid semanal
 > força snap nem duração mínima. Ver item 2 de "Suposições e decisões de
 > negócio".
 
+## Feature: Criar atividade a partir de um espaço vazio do calendário
+
+```gherkin
+Funcionalidade: Criar atividade diretamente no calendário
+
+  Cenário: Clicar em um espaço vazio abre um formulário de nova atividade
+    Dado que estou autenticado
+    Quando eu clico em um espaço vazio do calendário na quarta-feira às 14:00
+    Então o sistema deve exibir um formulário pedindo o nome e a cor da nova atividade
+
+  Cenário: Confirmar o formulário cria a atividade e já aloca no horário clicado
+    Dado que cliquei em um espaço vazio do calendário na quarta-feira às 14:00
+    Quando eu preencho o nome "Yoga" e a cor "#4B6B4F" e confirmo
+    Então a atividade "Yoga" deve aparecer na pool
+    E uma alocação de "Yoga" deve aparecer na quarta-feira às 14:00
+
+  Cenário: Impedir nome duplicado também neste formulário
+    Dado que já existe uma atividade "Trabalho" na minha pool
+    E cliquei em um espaço vazio do calendário
+    Quando eu tento criar uma atividade com nome "Trabalho" por esse formulário
+    Então o sistema deve rejeitar a criação
+    E avisar que já existe uma atividade com esse nome
+
+  Cenário: Cancelar o formulário não cria nada
+    Dado que cliquei em um espaço vazio do calendário
+    Quando eu cancelo o formulário sem confirmar
+    Então nenhuma atividade nova deve aparecer na pool
+    E nenhuma alocação nova deve aparecer no calendário
+```
+> Nota: clicar sobre um card existente não abre este formulário — continua
+> abrindo o menu de opções (ver Feature "Interagir com um card de alocação").
+> A nova alocação criada por este formulário usa a mesma duração padrão de
+> 1h das demais alocações criadas por arraste da pool.
+
 ## Feature: Interagir com um card de alocação
 
 ```gherkin

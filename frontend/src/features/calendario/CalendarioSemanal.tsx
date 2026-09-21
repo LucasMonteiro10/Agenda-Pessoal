@@ -1,5 +1,5 @@
 import type { EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
-import type { EventReceiveArg, EventResizeDoneArg } from '@fullcalendar/interaction';
+import type { DateClickArg, EventReceiveArg, EventResizeDoneArg } from '@fullcalendar/interaction';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
 import { NOME_EXIBICAO_DIA_SEMANA, paraDiaSemana, paraNumeroDiaSemana, type DiaSemana } from './dia-semana.ts';
+import { NovaAtividadeDialog } from './NovaAtividadeDialog.tsx';
 import type { Alocacao } from './tipos.ts';
 
 // Um domingo fixo e arbitrário, só como referência absoluta (nunca exibido
@@ -99,6 +100,7 @@ export interface CalendarioSemanalProps {
   diaInicioSemana: DiaSemana;
   granularidadeMinutos: number;
   alocacoes: Alocacao[];
+  nomesAtividadesExistentes: string[];
   onCriarAlocacao: (atividadeId: string, diaSemana: DiaSemana, horaInicio: string) => void;
   onMoverAlocacao: (alocacaoId: string, diaSemana: DiaSemana, horaInicio: string) => void;
   onRedimensionarAlocacao: (alocacaoId: string, novaDuracaoMinutos: number) => void;
@@ -108,6 +110,10 @@ export interface CalendarioSemanalProps {
   // atividade na pool (diferente do "Excluir" da pool, que cascateia e some
   // com a atividade também — ver AtividadeItem).
   onExcluirAlocacoesDaAtividade: (atividadeId: string) => void;
+  // Clicar num espaço vazio do grid: cria uma Atividade nova e já aloca no
+  // dia/horário clicado, numa única ação (docs/requisitos.md, Feature
+  // "Criar atividade a partir de um espaço vazio do calendário").
+  onCriarAtividadeEAlocar: (nome: string, cor: string, diaSemana: DiaSemana, horaInicio: string) => void;
 }
 
 interface MenuAberto {
@@ -121,15 +127,20 @@ export function CalendarioSemanal({
   diaInicioSemana,
   granularidadeMinutos,
   alocacoes,
+  nomesAtividadesExistentes,
   onCriarAlocacao,
   onMoverAlocacao,
   onRedimensionarAlocacao,
   onDuplicar,
   onExcluir,
   onExcluirAlocacoesDaAtividade,
+  onCriarAtividadeEAlocar,
 }: CalendarioSemanalProps) {
   const [menu, setMenu] = useState<MenuAberto | null>(null);
   const [confirmandoExclusaoDeAlocacoes, setConfirmandoExclusaoDeAlocacoes] = useState<string | null>(null);
+  const [espacoVazioClicado, setEspacoVazioClicado] = useState<{ diaSemana: DiaSemana; horaInicio: string } | null>(
+    null,
+  );
   const calendarioRef = useRef<FullCalendar>(null);
 
   // `initialDate`/`initialView` só se aplicam na primeira renderização — o
@@ -176,6 +187,17 @@ export function CalendarioSemanal({
     onCriarAlocacao(atividadeId, diaSemana, horaInicio);
   }
 
+  // dateClick (interactionPlugin) só dispara num espaço vazio do grid — um
+  // clique em cima de um card dispara eventClick (aoClicarEvento) em vez
+  // disso, sem também disparar este handler. `allDay` nunca deveria vir
+  // true aqui (allDaySlot={false} remove essa linha), mas a guarda evita
+  // abrir o formulário sem um horário de verdade caso a lib dispare a partir
+  // de outra região clicável (ex.: cabeçalho do dia) no futuro.
+  function aoClicarEspacoVazio(arg: DateClickArg) {
+    if (arg.allDay) return;
+    setEspacoVazioClicado(extrairDiaEHora(arg.date));
+  }
+
   return (
     <div className="calendario-semanal">
       <FullCalendar
@@ -210,6 +232,7 @@ export function CalendarioSemanal({
         eventDrop={aoMover}
         eventResize={aoRedimensionar}
         eventClick={aoClicarEvento}
+        dateClick={aoClicarEspacoVazio}
       />
 
       {menu &&
@@ -262,6 +285,18 @@ export function CalendarioSemanal({
           setConfirmandoExclusaoDeAlocacoes(null);
         }}
         onCancelar={() => setConfirmandoExclusaoDeAlocacoes(null)}
+      />
+
+      <NovaAtividadeDialog
+        open={espacoVazioClicado !== null}
+        nomesExistentes={nomesAtividadesExistentes}
+        onCriar={(nome, cor) => {
+          if (espacoVazioClicado) {
+            onCriarAtividadeEAlocar(nome, cor, espacoVazioClicado.diaSemana, espacoVazioClicado.horaInicio);
+          }
+          setEspacoVazioClicado(null);
+        }}
+        onCancelar={() => setEspacoVazioClicado(null)}
       />
     </div>
   );

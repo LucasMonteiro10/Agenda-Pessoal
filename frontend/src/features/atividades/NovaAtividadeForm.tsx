@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { validarNomeAtividade } from './validarNomeAtividade.ts';
 
 export interface NovaAtividadeFormProps {
   nomesExistentes: string[];
@@ -17,22 +18,13 @@ export function NovaAtividadeForm({ nomesExistentes, onCriar }: NovaAtividadeFor
 
   function aoSubmeter(evento: FormEvent) {
     evento.preventDefault();
-    const nomeLimpo = nome.trim();
-
-    if (!nomeLimpo) {
-      setErro('Digite um nome para a atividade.');
+    const mensagemDeErro = validarNomeAtividade(nome, nomesExistentes);
+    if (mensagemDeErro) {
+      setErro(mensagemDeErro);
       return;
     }
 
-    const jaExiste = nomesExistentes.some(
-      (existente) => existente.localeCompare(nomeLimpo, undefined, { sensitivity: 'base' }) === 0,
-    );
-    if (jaExiste) {
-      setErro(`Já existe uma atividade chamada "${nomeLimpo}".`);
-      return;
-    }
-
-    onCriar(nomeLimpo, cor);
+    onCriar(nome.trim(), cor);
     setNome('');
     setCor(COR_PADRAO);
     setErro(null);

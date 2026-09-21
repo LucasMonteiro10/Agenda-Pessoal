@@ -71,6 +71,7 @@ function App() {
             diaInicioSemana={diaInicioSemana}
             granularidadeMinutos={granularidadeMinutos}
             alocacoes={alocacoes}
+            nomesAtividadesExistentes={atividades.map((atividade) => atividade.nome)}
             onCriarAlocacao={(atividadeId, diaSemana, horaInicio) => {
               const atividade = atividades.find((item) => item.id === atividadeId)
               if (!atividade) return
@@ -96,6 +97,14 @@ function App() {
             }}
             onExcluir={(id) => setAlocacoes((atual) => atual.filter((alocacao) => alocacao.id !== id))}
             onExcluirAlocacoesDaAtividade={excluirAlocacoesDaAtividade}
+            onCriarAtividadeEAlocar={(nome, cor, diaSemana, horaInicio) => {
+              const novaAtividade: Atividade = { id: crypto.randomUUID(), nome, cor }
+              setAtividades((atual) => [...atual, novaAtividade])
+              setAlocacoes((atual) => [
+                ...atual,
+                { id: crypto.randomUUID(), atividade: novaAtividade, diaSemana, horaInicio, duracaoMinutos: 60 },
+              ])
+            }}
           />
 
           <PoolLateral
