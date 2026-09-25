@@ -591,6 +591,46 @@ Feature "Alocar atividades no calendário".
   linhas), ambas voltaram ao layout empilhado padrão, título completo
   visível na segunda linha.
 
+### 7.14. Correção: parte de baixo do card "de uma linha só" cortada (21/09/2026)
+
+Lucas encontrou um defeito visual: numa atividade de 30 min (granularidade de
+30 minutos, card no modo "de uma linha só" da seção 7.13), a parte de baixo
+do card ficava cortada quando ele estava posicionado no horário logo antes de
+mudar a hora ou a meia-hora da linha seguinte.
+
+- **Causa raiz:** `.fc-event--linha-unica .fc-event-main-frame` usa
+  `align-items: baseline` (pra alinhar horário e título pela mesma linha de
+  base do texto) combinado com `overflow: hidden`. O título tem font-size
+  maior (14px, ~26px de altura de linha) que o horário (11px, ~18px) — como
+  os dois são alinhados pela mesma base, o título fica mais alto que o
+  horário nos dois sentidos (acima e abaixo da linha de base). Num card
+  curto o bastante (30 min de duração já basta, não precisa de nenhuma
+  posição especial), a altura do frame só sobra pro horário; o título,
+  alinhado pela mesma base, se estende abaixo do frame — e o `overflow:
+  hidden` cortava exatamente essa sobra (a parte de baixo do título). O
+  motivo de parecer específico de "antes de mudar a hora" é que o
+  FullCalendar calcula a altura em pixels de cada card com pequenas
+  diferenças de arredondamento entre alocações adjacentes de mesma duração
+  (uma pode sair 1px mais baixa que a outra) — o suficiente pra tornar o
+  corte ora quase imperceptível, ora bem visível, sem que a posição no
+  horário seja de fato a causa.
+- **Correção:** trocado `overflow: hidden` por `overflow: visible` em
+  `.fc-event--linha-unica .fc-event-main-frame` (mesmo padrão já usado em
+  `.fc-timegrid-event-short .fc-event-main-frame`, ver seção 7.13). O
+  truncamento horizontal do título (reticências) não depende do frame — ele
+  já tem seu próprio `overflow: hidden` (`.fc-event--linha-unica
+  .fc-event-title`), então continua funcionando igual.
+- Verificado via DOM (não só visualmente): antes da correção, o
+  `getBoundingClientRect()` do título ultrapassava o do frame em ~8px na
+  vertical, cortado pelo `overflow: hidden`; depois da correção, a mesma
+  sobra continua existindo (o texto do título é mesmo mais alto que o
+  frame), mas nada mais a esconde — o card renderiza o título inteiro.
+  Reproduzido com duas alocações de 30 min consecutivas (uma terminando na
+  meia-hora, outra na virada da hora) — ambas paravam de cortar o título
+  igualmente, confirmando que o problema nunca foi realmente sobre a
+  posição da hora, e sim sobre a altura do card ser menor que a linha do
+  título.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

@@ -153,10 +153,21 @@
   content: none;
 }
 
+/* `overflow: visible` (não `hidden`): com `align-items: baseline`, o
+   título (font-size 14px, ~26px de altura de linha) fica mais alto que o
+   horário (11px, ~18px) — em cards curtos (poucos minutos de duração, ou
+   posicionados bem antes de uma virada de hora/meia-hora, onde a altura em
+   pixels calculada pelo FullCalendar para o card fica bem próxima da altura
+   do próprio horário), o frame só tem altura de sobra pro horário, e o
+   título — alinhado pela mesma base de texto — acaba se estendendo abaixo
+   do frame. Com `overflow: hidden` aqui, essa sobra ficava cortada (a parte
+   de baixo do título sumia). O truncamento horizontal do título continua
+   funcionando igual, via `overflow: hidden` no próprio `.fc-event-title`
+   (ver abaixo) — não depende do frame. */
 .calendario-semanal .fc-event--linha-unica .fc-event-main-frame {
   flex-direction: row;
   align-items: baseline;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .calendario-semanal .fc-event--linha-unica .fc-event-time {
