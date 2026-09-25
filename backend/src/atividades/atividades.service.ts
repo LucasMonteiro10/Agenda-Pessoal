@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { semCamposIndefinidos } from '../common/sem-campos-indefinidos.js';
 import { AtualizarAtividadeDto } from './dto/atualizar-atividade.dto.js';
 import { CriarAtividadeDto } from './dto/criar-atividade.dto.js';
 import { Atividade } from './entities/atividade.entity.js';
@@ -33,7 +34,8 @@ export class AtividadesService {
       await this.garantirNomeDisponivel(usuarioId, dto.nome);
     }
 
-    Object.assign(atividade, dto);
+    // Só os campos enviados — ver o comentário em semCamposIndefinidos.
+    Object.assign(atividade, semCamposIndefinidos(dto));
     const salva = await this.atividades.save(atividade);
     return paraResposta(salva);
   }

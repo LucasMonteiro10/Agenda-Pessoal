@@ -76,11 +76,16 @@ describe('Alocar atividades no calendário (e2e)', () => {
       .send({ atividadeId, diaSemana: 'terca-feira', horaInicio: '12:00', duracaoMinutos: 60 });
 
     // Quando eu arrasto essa alocação para a quarta-feira às 13:00
-    await request(app.getHttpServer())
+    const resposta = await request(app.getHttpServer())
       .patch(`/alocacoes/${alocacao.body.id}`)
       .set(autenticado())
       .send({ diaSemana: 'quarta-feira', horaInicio: '13:00' })
       .expect(200);
+
+    // A resposta do PATCH é a alocação COMPLETA — o frontend usa esse corpo
+    // direto no estado da tela. Um campo não enviado (aqui, a duração) não
+    // pode sumir da resposta (ver CLAUDE.md, seção 7.17).
+    expect(resposta.body).toEqual({ ...alocacao.body, diaSemana: 'quarta-feira', horaInicio: '13:00' });
 
     // Então a alocação deve passar a aparecer na quarta-feira às 13:00
     // E deixar de aparecer na terça-feira às 12:00
@@ -106,11 +111,15 @@ describe('Alocar atividades no calendário (e2e)', () => {
     // Quando eu arrasto a borda inferior do card para estender até as 00:17
     // (23:00 + 77 minutos = 00:17 do dia seguinte — um valor deliberadamente
     // "quebrado" para provar que não há snap em múltiplos de 15/30/60 min)
-    await request(app.getHttpServer())
+    const resposta = await request(app.getHttpServer())
       .patch(`/alocacoes/${alocacao.body.id}`)
       .set(autenticado())
       .send({ duracaoMinutos: 77 })
       .expect(200);
+
+    // A resposta do PATCH mantém dia e horário, que não foram enviados —
+    // sem eles o card quebrava o calendário inteiro no frontend (seção 7.17).
+    expect(resposta.body).toEqual({ ...alocacao.body, duracaoMinutos: 77 });
 
     // Então a duração da alocação deve passar a ser das 23:00 às 00:17
     const alocacaoAtualizada = await request(app.getHttpServer())

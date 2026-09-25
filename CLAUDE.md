@@ -720,6 +720,45 @@ a partir de um clone no calendário, refletindo em todas as ocorrências.
   e os dois clones (segunda e sexta) na hora, o nome duplicado foi
   bloqueado, e tudo continuou igual depois de recarregar a página.
 
+### 7.17. Correção: redimensionar um card fazia a página inteira sumir (25/09/2026)
+
+Lucas encontrou o defeito: ao mudar a duração de uma alocação arrastando a
+borda do card, a tela ficava em branco.
+
+- **Sintoma técnico:** `TypeError: Cannot read properties of undefined
+  (reading 'split')` em `paraDataDoEvento` (`CalendarioSemanal`). Um erro
+  durante o render sem Error Boundary desmonta a árvore React inteira —
+  por isso sumia a página toda, não só o card.
+- **Causa raiz (backend):** `tsconfig.json` usa `target: ES2023`, o que liga
+  `useDefineForClassFields`. Com isso, todo campo opcional de um DTO de
+  PATCH vira propriedade própria valendo `undefined` — um redimensionamento
+  (`{ duracaoMinutos }`) chegava como `{ diaSemana: undefined, horaInicio:
+  undefined, duracaoMinutos }`. O `Object.assign(entidade, dto)` em
+  `AlocacoesService.atualizar` sobrescrevia os valores atuais com
+  `undefined`; o TypeORM ignora `undefined` no UPDATE (o banco sempre ficou
+  certo), mas **a resposta do PATCH saía sem os campos não enviados**. O
+  frontend (seção 7.15) põe essa resposta direto no estado, e o card sem
+  `horaInicio` quebrava o render. Mover tinha o mesmo problema ao contrário
+  (resposta sem `duracaoMinutos`), só que sem erro visível. O mesmo padrão
+  existia em `AtividadesService.atualizar` (PATCH só com `cor` devolvia a
+  atividade sem `nome`) — latente, porque o formulário de edição (seção
+  7.16) sempre manda os dois campos.
+- **Por que os testes não pegaram:** os e2e de PATCH conferiam o resultado
+  com um `GET` depois, nunca o corpo da resposta do próprio PATCH; e os
+  testes do `useCronograma` mockam a API devolvendo objetos completos. Na
+  verificação manual da seção 7.15, mover um card foi conferido no banco,
+  não na tela — o card sem duração passou despercebido.
+- **Correção:** `src/common/sem-campos-indefinidos.ts` (novo) descarta os
+  campos `undefined` do DTO antes do `Object.assign`, nos dois serviços.
+  Preferido a desligar `useDefineForClassFields` no tsconfig, que mudaria a
+  semântica de todas as classes do backend (entidades do TypeORM inclusive)
+  para resolver um problema de dois pontos.
+- **Testes:** os e2e de "Mover" e "Redimensionar" passaram a conferir o
+  corpo completo da resposta do PATCH, e um e2e novo cobre "Editar só a cor
+  de uma atividade" (resposta e pool) — os 3 falhavam antes da correção;
+  18/18 e2e passando depois. Verificado no navegador: redimensionar e mover
+  mantêm a página e os demais campos do card, e sobrevivem a um reload.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

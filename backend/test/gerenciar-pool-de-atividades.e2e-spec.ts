@@ -94,6 +94,28 @@ describe('Gerenciar pool de atividades (e2e)', () => {
     }
   });
 
+  it('Cenário: Editar só a cor de uma atividade mantém o nome, inclusive na resposta', async () => {
+    // Dado que a atividade "Estudar Inglês" possui cor "#3366FF"
+    const atividade = await request(app.getHttpServer())
+      .post('/atividades')
+      .set(autenticado())
+      .send({ nome: 'Estudar Inglês', cor: '#3366FF' });
+
+    // Quando eu altero apenas a cor para "#33FF81"
+    const resposta = await request(app.getHttpServer())
+      .patch(`/atividades/${atividade.body.id}`)
+      .set(autenticado())
+      .send({ cor: '#33FF81' })
+      .expect(200);
+
+    // Então a atividade continua com o nome "Estudar Inglês" e passa a ter a
+    // cor "#33FF81" — tanto na resposta do PATCH (o que o frontend usa na
+    // tela) quanto na pool
+    expect(resposta.body).toEqual({ id: atividade.body.id, nome: 'Estudar Inglês', cor: '#33FF81' });
+    const pool = await request(app.getHttpServer()).get('/atividades').set(autenticado());
+    expect(pool.body).toEqual([{ id: atividade.body.id, nome: 'Estudar Inglês', cor: '#33FF81' }]);
+  });
+
   it('Cenário: Editar dia, horário ou duração NÃO propaga entre clones', async () => {
     // Dado que a atividade "Estudar Inglês" possui uma alocação na segunda-feira das 19:00 às 20:00
     // E possui outra alocação na sexta-feira das 19:00 às 20:00
