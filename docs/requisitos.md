@@ -340,6 +340,13 @@ Funcionalidade: Autenticação de usuário
     Dado que existem dois usuários, A e B, cada um com atividades cadastradas
     Quando o usuário A faz login
     Então ele deve ver apenas as atividades e alocações que ele criou
+
+  Cenário: Atividades e alocações continuam salvas depois de recarregar a página
+    Dado que estou autenticado
+    E que eu criei atividades e as aloquei no calendário
+    Quando eu recarrego a página (ou o ambiente é reiniciado)
+    Então eu devo continuar vendo as mesmas atividades na pool
+    E as mesmas alocações no calendário
 ```
 
 ---

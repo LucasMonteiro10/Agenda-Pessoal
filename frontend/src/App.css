@@ -44,6 +44,17 @@
   font-size: 44px;
 }
 
+/* Falha ao salvar/carregar no backend (ver useCronograma). */
+.app-erro {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  background: var(--accent-bg);
+  color: var(--text-h);
+  font: 14px/1.4 var(--sans);
+}
+
 .config-toolbar {
   display: flex;
   gap: 20px;

@@ -440,8 +440,8 @@ em `App.tsx`). Implementado agora:
   `accessToken`) e envolve toda a composição existente com
   `<TelaAutenticada>`. Só a autenticação fala com o backend por enquanto —
   Atividades/Alocações continuam em estado local mockado (`useState`), como
-  já era; conectar essa parte ao backend é um passo separado, ainda não
-  feito.
+  já era; conectar essa parte ao backend é um passo separado — feito em
+  25/09/2026, ver seção 7.15.
 - **Defeito encontrado e corrigido nesta rodada:** deslogar logo depois de
   um cadastro deixava a tela presa em "Criar conta" em vez de voltar para
   "Login" — o estado interno (`modo`) do formulário não era resetado.
@@ -630,6 +630,49 @@ mudar a hora ou a meia-hora da linha seguinte.
   igualmente, confirmando que o problema nunca foi realmente sobre a
   posição da hora, e sim sobre a altura do card ser menor que a linha do
   título.
+
+### 7.15. Frontend conectado ao backend para Atividades/Alocações (25/09/2026)
+
+Lucas relatou que, toda vez que ligava/desligava o Docker, as atividades do
+usuário sumiam.
+
+- **Causa raiz:** não era o Docker nem o banco. O volume
+  `postgres_data` persistia normalmente (os usuários continuavam lá), mas as
+  estatísticas do Postgres (`pg_stat_user_tables`) mostravam **zero inserts**
+  em `atividades`/`alocacoes` desde sempre. Atividades e Alocações viviam só
+  em `useState` no `App.tsx` (seção 7.9), iniciando com 3 atividades de
+  exemplo fixas no código — nunca chegavam ao backend. Reiniciar o Docker
+  fazia o Vite recarregar a página, e o estado do React voltava ao início
+  (um F5 bastaria para reproduzir).
+- **Correção:**
+  - `src/api/http.ts` (novo): cliente `fetch` compartilhado — header
+    `Authorization: Bearer <token>`, resposta 204 sem corpo, e erros viram
+    `ErroHttp` com `status` (além da mensagem do NestJS). `authApi.ts` passou
+    a usá-lo em vez de ter sua própria cópia.
+  - `atividadesApi.ts` / `alocacoesApi.ts` (novos): uma função fininha por
+    rota do contrato da seção 7.3. `PATCH /atividades/:id` ficou de fora —
+    ainda não há tela de edição (regra 5).
+  - `useCronograma` (novo hook, `src/features/cronograma/`): carrega
+    atividades e alocações do backend ao montar e salva cada ação antes de
+    refleti-la na tela. **Exceção — mover/redimensionar são otimistas:** o
+    FullCalendar já desenha o card na posição nova antes de chamar a gente;
+    se o backend recusar, o estado volta ao original e o card retorna para
+    onde estava. **401** (token expirado — 7 dias — ou inválido) desloga o
+    usuário; outros erros aparecem num aviso `role="alert"` (`.app-erro`) no
+    topo, limpo na próxima ação.
+  - `App.tsx`: dividido em `App` (autenticação) e `Cronograma` (a tela),
+    montado só quando há token — deslogar desmonta o componente e descarta
+    o estado do usuário anterior junto. As 3 atividades de exemplo saíram.
+- **Por que hook e não Redux Toolkit (seção 3):** o estado ainda é usado por
+  uma única tela, e um hook resolve sem infraestrutura nova. Migrar para uma
+  slice fica natural quando outra parte do app precisar desses dados — o
+  hook já concentra toda a lógica que viraria thunks/reducers.
+- **Testes:** 30 novos (65/65 no frontend) — `http.test.ts`,
+  `atividadesApi.test.ts`, `alocacoesApi.test.ts` e `useCronograma.test.ts`
+  (inclui o novo cenário "Atividades e alocações continuam salvas depois de
+  recarregar a página", em `docs/requisitos.md`). Verificado também no app
+  real: criar atividade + alocação, `docker compose down` / `up`, tudo
+  continuou lá; mover um card gravou o novo horário no Postgres.
 
 ## 8. Requisitos funcionais
 
