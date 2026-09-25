@@ -759,6 +759,41 @@ borda do card, a tela ficava em branco.
   18/18 e2e passando depois. Verificado no navegador: redimensionar e mover
   mantêm a página e os demais campos do card, e sobrevivem a um reload.
 
+### 7.18. Error Boundary: nenhum erro de render deixa a página em branco (25/09/2026)
+
+Consequência direta da seção 7.17: um único dado inesperado vindo da API
+desmontava a árvore React inteira. Pedido do Lucas: implementar um Error
+Boundary.
+
+- **`components/ErrorBoundary.tsx`** (novo): class component — o React 19
+  ainda não tem hook para `getDerivedStateFromError`/`componentDidCatch`.
+  Troca a parte quebrada por uma mensagem (`role="alert"`, `.erro-tela`)
+  que avisa que os dados continuam salvos (tudo passa pelo backend antes de
+  ir pra tela, seção 7.15) e oferece "Tentar novamente". O erro vai para o
+  `console.error` com o component stack.
+- **"Tentar novamente" só limpa o erro:** os filhos já foram desmontados
+  quando o erro aconteceu, então voltam do zero — no cronograma, isso
+  recarrega atividades e alocações do backend, descartando o estado que
+  quebrou. Se o erro persistir, a mensagem volta (sem tela em branco).
+- **Dois níveis, mesmo componente:**
+  - em volta do `Cronograma` (dentro de `TelaAutenticada`, em `App.tsx`):
+    onde os erros de fato acontecem; como fica *dentro* do
+    `TelaAutenticada`, o botão "Deslogar" continua na tela e funcionando;
+  - em volta do `App` inteiro (`main.tsx`): rede de segurança para qualquer
+    outro ponto (ex.: tela de login).
+- **Limite conhecido:** Error Boundaries do React só capturam erros de
+  render e de ciclo de vida — erros em handlers de evento e em código
+  assíncrono não passam por eles. Falhas de API já são tratadas à parte
+  (aviso `.app-erro` em `useCronograma`).
+- **Testes:** 7 novos (88/88 no frontend) — `ErrorBoundary.test.tsx`
+  (comportamento) e `App.test.tsx` (posicionamento: erro no cronograma
+  mostra a mensagem e mantém o "Deslogar" funcionando; falhava antes, com o
+  erro subindo sem tratamento). Verificado no navegador reproduzindo o
+  defeito da seção 7.17 sem mexer no código — interceptando `GET
+  /alocacoes` via Playwright e removendo `horaInicio` da resposta: a
+  mensagem apareceu com o "Deslogar" disponível e, sem a interceptação,
+  "Tentar novamente" trouxe o cronograma de volta.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

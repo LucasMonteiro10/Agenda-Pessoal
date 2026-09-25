@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { PoolLateral } from './features/atividades/PoolLateral.tsx'
 import { TelaAutenticada } from './features/auth/TelaAutenticada.tsx'
 import { CalendarioSemanal } from './features/calendario/CalendarioSemanal.tsx'
@@ -24,10 +25,16 @@ function App() {
   }
 
   // `Cronograma` só é montado com um token em mãos — deslogar desmonta o
-  // componente e descarta o estado do usuário anterior junto.
+  // componente e descarta o estado do usuário anterior junto. O
+  // ErrorBoundary fica aqui dentro (e não em volta do TelaAutenticada) para
+  // que, se o cronograma quebrar, o botão "Deslogar" continue na tela.
   return (
     <TelaAutenticada autenticado={accessToken !== null} onAutenticado={autenticar} onDeslogar={deslogar}>
-      {accessToken && <Cronograma accessToken={accessToken} onNaoAutorizado={deslogar} />}
+      {accessToken && (
+        <ErrorBoundary>
+          <Cronograma accessToken={accessToken} onNaoAutorizado={deslogar} />
+        </ErrorBoundary>
+      )}
     </TelaAutenticada>
   )
 }

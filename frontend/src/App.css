@@ -44,6 +44,28 @@
   font-size: 44px;
 }
 
+/* Erro inesperado de render capturado pelo ErrorBoundary
+   (components/ErrorBoundary.tsx) — no lugar do cronograma ou da tela toda. */
+.erro-tela {
+  max-width: 520px;
+  margin: 64px auto;
+  padding: 28px 32px;
+  border: 1px solid var(--accent-border);
+  border-radius: 18px;
+  background: var(--code-bg);
+  box-shadow: var(--shadow);
+  text-align: left;
+}
+
+.erro-tela h2 {
+  margin: 0 0 8px;
+}
+
+.erro-tela p {
+  margin: 0 0 20px;
+  color: var(--text);
+}
+
 /* Falha ao salvar/carregar no backend (ver useCronograma). */
 .app-erro {
   margin: 0;
