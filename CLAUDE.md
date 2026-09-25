@@ -440,8 +440,8 @@ em `App.tsx`). Implementado agora:
   `accessToken`) e envolve toda a composição existente com
   `<TelaAutenticada>`. Só a autenticação fala com o backend por enquanto —
   Atividades/Alocações continuam em estado local mockado (`useState`), como
-  já era; conectar essa parte ao backend é um passo separado, ainda não
-  feito.
+  já era; conectar essa parte ao backend é um passo separado — feito em
+  25/09/2026, ver seção 7.15.
 - **Defeito encontrado e corrigido nesta rodada:** deslogar logo depois de
   um cadastro deixava a tela presa em "Criar conta" em vez de voltar para
   "Login" — o estado interno (`modo`) do formulário não era resetado.
@@ -489,6 +489,310 @@ autenticado → cronograma com o visual de sempre; deslogar → volta o
 Water.css. Confirmado via DevTools que o `<link>` é removido do `<head>`
 ao autenticar (não é só uma questão de especificidade CSS escondendo o
 efeito).
+
+### 7.11. Correção no mapeamento de `BACKEND_PORT` no Docker Compose (21/09/2026)
+
+O `docker-compose.yml` mapeava `"${BACKEND_PORT:-3000}:3000"` — só o lado
+host do mapeamento de porta era configurável via `.env`; o lado do
+container ficava sempre fixo em `3000`. Isso é um bug: `backend/src/main.ts`
+faz `app.listen(process.env.BACKEND_PORT ?? 3000)`, ou seja, o NestJS
+*dentro* do container já escutava na porta customizada — então trocar
+`BACKEND_PORT` no `.env` sem trocar as duas pontas do mapeamento deixava a
+porta host apontando para o lugar errado (container continuava exposto só
+em `3000`, não na porta nova). Corrigido para
+`"${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"`, as duas pontas usando a
+mesma variável. Ver README para as portas em uso neste ambiente local
+(diferentes dos defaults do `.env.example`, usadas aqui para não conflitar
+com outros serviços já rodando na máquina).
+
+### 7.12. Criar atividade a partir de um clique no calendário (21/09/2026)
+
+Nova feature: clicar num espaço vazio do grid (não num card existente) abre
+um formulário pedindo nome e cor — ao confirmar, cria a Atividade **e** já
+aloca no dia/horário clicado, numa única ação. Cenários Gherkin em
+`docs/requisitos.md`, Feature "Criar atividade a partir de um espaço vazio
+do calendário".
+
+- **`dateClick` (do `@fullcalendar/interaction`, já importado antes) só
+  dispara num espaço vazio** — clicar num card dispara `eventClick` em vez
+  disso, sem também disparar `dateClick`. Não precisou de nenhuma lógica pra
+  diferenciar "clique no card" de "clique no vazio": a lib já resolve isso.
+  Guarda `if (arg.allDay) return` por precaução (`allDaySlot={false}` já
+  devia impedir isso, mas evita abrir o formulário sem horário de verdade se
+  a lib um dia passar a disparar a partir de outra região clicável).
+- **Regra de nome único extraída pra `validarNomeAtividade.ts`**
+  (`features/atividades/`), compartilhada entre `NovaAtividadeForm` (pool) e
+  o novo `NovaAtividadeDialog` (calendário) — evita a regra divergir entre
+  os dois formulários de criação de Atividade que passaram a existir.
+- **Duração padrão da alocação criada: 60 minutos**, igual à alocação criada
+  ao arrastar da pool (`App.tsx`) — mesma convenção, sem novo conceito.
+- **`NovaAtividadeDialog`** segue o mesmo padrão de portal pro `<body>` do
+  `ConfirmDialog` (nasce dentro da árvore do FullCalendar, sujeito ao
+  contexto de empilhamento interno da lib) e reaproveita as mesmas classes
+  CSS do `ConfirmDialog`/`NovaAtividadeForm` — sem CSS novo.
+- Testado manualmente no navegador: clique em espaço vazio abre o
+  formulário com foco no campo nome; confirmar cria a atividade na pool E
+  a alocação no dia/hora clicado; clicar num card existente continua
+  abrindo o menu de opções (Duplicar/Excluir/Excluir alocações), sem abrir
+  o formulário por engano.
+
+### 7.13. Card de alocação: horário e título na mesma linha em cards baixos (21/09/2026)
+
+Pedido: quando o card de uma alocação só tem altura pra uma linha de texto
+(duração curta e/ou granularidade fina), horário e título devem dividir a
+mesma linha; se mesmo assim o título não couber ao lado do horário, esconder
+o horário e mostrar só o título. Cenários Gherkin em `docs/requisitos.md`,
+Feature "Alocar atividades no calendário".
+
+- **A detecção de "evento curto" do próprio FullCalendar não é confiável em
+  pixels.** A lib já tenta resolver o primeiro pedido sozinha: marca o
+  evento com a classe `fc-timegrid-event-short` (ver
+  `@fullcalendar/timegrid`) quando o considera baixo, e essa classe muda o
+  CSS pra layout em linha. Só que o cálculo interno dela
+  (`rect.span.end - rect.span.start < eventShortHeight`, `eventShortHeight`
+  = 30 por padrão) usa uma unidade interna que não bate de forma confiável
+  com a altura final renderizada — na prática, um card de **29px** de altura
+  ficou **sem** a classe (deveria ter, por estar abaixo do limiar
+  documentado de 30px). Sem a classe, o card ficava preso no layout
+  empilhado padrão sem espaço vertical pras duas linhas: o horário sozinho
+  já consumia a altura toda do frame, e o título (que tem `flex-grow:1` mas
+  nenhuma sobra de espaço) renderizava com altura zero — **sumia
+  inteiramente**, não só cortava. Corrigido decidindo isso via JS, medindo a
+  altura real renderizada do card (`ajustarLinhaUnica` em
+  `CalendarioSemanal.tsx`) — e a classe própria da lib foi neutralizada no
+  CSS (`App.css`) pra não haver duas fontes de verdade competindo pelo mesmo
+  layout.
+- **O `frame.scrollWidth` nunca "estoura" pra detectar overflow do título** —
+  essa foi a segunda armadilha, depois de corrigir a primeira. A primeira
+  versão comparava `frame.scrollWidth` com `frame.clientWidth` pra decidir
+  se horário+título cabiam juntos, mas o container do título tem
+  `min-width: 0` + `overflow: hidden` (necessário pro texto poder truncar em
+  vez de estourar a linha) — e um item flex encolhido dessa forma nunca
+  aumenta o `scrollWidth` do pai, mesmo com o próprio texto sendo cortado no
+  meio de uma palavra. A medição certa é no **título em si**:
+  `titulo.scrollWidth > titulo.clientWidth` (com o horário visível durante a
+  medição, já que é ele quem "rouba" espaço do título via flexbox) — só
+  assim dá pra saber se o texto truncaria com o horário do lado.
+- **Card com o horário escondido usa `ResizeObserver`, não recalcula só na
+  montagem.** A mesma alocação pode entrar/sair do modo "uma linha só"
+  conforme a coluna do dia muda de largura (outra alocação sobreposta no
+  mesmo horário, redimensionar a janela) ou de altura (duração muda por
+  redimensionar o card, ou a granularidade selecionada muda o espaçamento
+  das linhas) — sem que o card em si seja recriado. `eventDidMount`/
+  `eventWillUnmount` registram/desregistram um `ResizeObserver` por card
+  (`CalendarioSemanal.tsx`), que já dispara uma primeira medição sozinho ao
+  começar a observar (não precisou de uma chamada manual separada).
+- Verificado manualmente no navegador (limitação de sempre: layout real não
+  é testável em jsdom/RTL, ver seção 7.6) — com granularidade de 1 hora
+  (fazendo o card padrão de 60 min renderizar como uma linha só): atividade
+  "Chá" mostrou `09:00 - 10:00 — Chá` numa linha só; atividade "Reunião de
+  alinhamento semanal" mostrou só o título, sem o horário; voltando a
+  granularidade pra 15 minutos (card fica alto o suficiente pras duas
+  linhas), ambas voltaram ao layout empilhado padrão, título completo
+  visível na segunda linha.
+
+### 7.14. Correção: parte de baixo do card "de uma linha só" cortada (21/09/2026)
+
+Lucas encontrou um defeito visual: numa atividade de 30 min (granularidade de
+30 minutos, card no modo "de uma linha só" da seção 7.13), a parte de baixo
+do card ficava cortada quando ele estava posicionado no horário logo antes de
+mudar a hora ou a meia-hora da linha seguinte.
+
+- **Causa raiz:** `.fc-event--linha-unica .fc-event-main-frame` usa
+  `align-items: baseline` (pra alinhar horário e título pela mesma linha de
+  base do texto) combinado com `overflow: hidden`. O título tem font-size
+  maior (14px, ~26px de altura de linha) que o horário (11px, ~18px) — como
+  os dois são alinhados pela mesma base, o título fica mais alto que o
+  horário nos dois sentidos (acima e abaixo da linha de base). Num card
+  curto o bastante (30 min de duração já basta, não precisa de nenhuma
+  posição especial), a altura do frame só sobra pro horário; o título,
+  alinhado pela mesma base, se estende abaixo do frame — e o `overflow:
+  hidden` cortava exatamente essa sobra (a parte de baixo do título). O
+  motivo de parecer específico de "antes de mudar a hora" é que o
+  FullCalendar calcula a altura em pixels de cada card com pequenas
+  diferenças de arredondamento entre alocações adjacentes de mesma duração
+  (uma pode sair 1px mais baixa que a outra) — o suficiente pra tornar o
+  corte ora quase imperceptível, ora bem visível, sem que a posição no
+  horário seja de fato a causa.
+- **Correção:** trocado `overflow: hidden` por `overflow: visible` em
+  `.fc-event--linha-unica .fc-event-main-frame` (mesmo padrão já usado em
+  `.fc-timegrid-event-short .fc-event-main-frame`, ver seção 7.13). O
+  truncamento horizontal do título (reticências) não depende do frame — ele
+  já tem seu próprio `overflow: hidden` (`.fc-event--linha-unica
+  .fc-event-title`), então continua funcionando igual.
+- Verificado via DOM (não só visualmente): antes da correção, o
+  `getBoundingClientRect()` do título ultrapassava o do frame em ~8px na
+  vertical, cortado pelo `overflow: hidden`; depois da correção, a mesma
+  sobra continua existindo (o texto do título é mesmo mais alto que o
+  frame), mas nada mais a esconde — o card renderiza o título inteiro.
+  Reproduzido com duas alocações de 30 min consecutivas (uma terminando na
+  meia-hora, outra na virada da hora) — ambas paravam de cortar o título
+  igualmente, confirmando que o problema nunca foi realmente sobre a
+  posição da hora, e sim sobre a altura do card ser menor que a linha do
+  título.
+
+### 7.15. Frontend conectado ao backend para Atividades/Alocações (25/09/2026)
+
+Lucas relatou que, toda vez que ligava/desligava o Docker, as atividades do
+usuário sumiam.
+
+- **Causa raiz:** não era o Docker nem o banco. O volume
+  `postgres_data` persistia normalmente (os usuários continuavam lá), mas as
+  estatísticas do Postgres (`pg_stat_user_tables`) mostravam **zero inserts**
+  em `atividades`/`alocacoes` desde sempre. Atividades e Alocações viviam só
+  em `useState` no `App.tsx` (seção 7.9), iniciando com 3 atividades de
+  exemplo fixas no código — nunca chegavam ao backend. Reiniciar o Docker
+  fazia o Vite recarregar a página, e o estado do React voltava ao início
+  (um F5 bastaria para reproduzir).
+- **Correção:**
+  - `src/api/http.ts` (novo): cliente `fetch` compartilhado — header
+    `Authorization: Bearer <token>`, resposta 204 sem corpo, e erros viram
+    `ErroHttp` com `status` (além da mensagem do NestJS). `authApi.ts` passou
+    a usá-lo em vez de ter sua própria cópia.
+  - `atividadesApi.ts` / `alocacoesApi.ts` (novos): uma função fininha por
+    rota do contrato da seção 7.3. `PATCH /atividades/:id` ficou de fora
+    nesta rodada — ainda não havia tela de edição (regra 5); entrou na
+    seção 7.16.
+  - `useCronograma` (novo hook, `src/features/cronograma/`): carrega
+    atividades e alocações do backend ao montar e salva cada ação antes de
+    refleti-la na tela. **Exceção — mover/redimensionar são otimistas:** o
+    FullCalendar já desenha o card na posição nova antes de chamar a gente;
+    se o backend recusar, o estado volta ao original e o card retorna para
+    onde estava. **401** (token expirado — 7 dias — ou inválido) desloga o
+    usuário; outros erros aparecem num aviso `role="alert"` (`.app-erro`) no
+    topo, limpo na próxima ação.
+  - `App.tsx`: dividido em `App` (autenticação) e `Cronograma` (a tela),
+    montado só quando há token — deslogar desmonta o componente e descarta
+    o estado do usuário anterior junto. As 3 atividades de exemplo saíram.
+- **Por que hook e não Redux Toolkit (seção 3):** o estado ainda é usado por
+  uma única tela, e um hook resolve sem infraestrutura nova. Migrar para uma
+  slice fica natural quando outra parte do app precisar desses dados — o
+  hook já concentra toda a lógica que viraria thunks/reducers.
+- **Testes:** 30 novos (65/65 no frontend) — `http.test.ts`,
+  `atividadesApi.test.ts`, `alocacoesApi.test.ts` e `useCronograma.test.ts`
+  (inclui o novo cenário "Atividades e alocações continuam salvas depois de
+  recarregar a página", em `docs/requisitos.md`). Verificado também no app
+  real: criar atividade + alocação, `docker compose down` / `up`, tudo
+  continuou lá; mover um card gravou o novo horário no Postgres.
+
+### 7.16. Editar nome/cor de uma atividade pela pool ou pelo card (25/09/2026)
+
+Pedido do Lucas: editar nome e/ou cor de uma atividade, tanto na pool quanto
+a partir de um clone no calendário, refletindo em todas as ocorrências.
+
+- **Backend: nada mudou.** `PATCH /atividades/:id` já existia (Dia 4) e a
+  propagação para os clones já saía de graça da modelagem (seção 7.3 —
+  Alocação só guarda `atividadeId`; nome/cor vêm de join). O cenário
+  "Editar nome e cor propaga para todos os clones" já tinha teste e2e.
+- **Cenários Gherkin novos** em `docs/requisitos.md` (para revisão do
+  Lucas): "Editar só o nome ou só a cor de uma atividade", "Impedir
+  renomear uma atividade para um nome que já existe" e "Editar a atividade a
+  partir de um card reflete na pool e em todos os clones". O cenário "Clicar
+  em um card abre o menu de opções" passou a listar "Editar atividade".
+- **`EditarAtividadeDialog`** (novo, `features/atividades/`): um só
+  formulário para os dois pontos de entrada — botão "Editar" no card da
+  pool (`AtividadeItem`) e opção "Editar atividade" no menu do card do
+  calendário (`CalendarioSemanal`). Reaproveita `validarNomeAtividade`,
+  descontando o nome da própria atividade (manter o nome ou mudar só
+  maiúsculas/minúsculas não conta como duplicado). Diferente do
+  `NovaAtividadeDialog`, não tem prop `open`: é montado só enquanto a edição
+  está aberta, então sempre nasce com o nome/cor atuais sem precisar
+  resetar estado à mão.
+- **Rótulo "Editar atividade" (não só "Editar") no menu do card:** deixa
+  claro que a mudança vale para a atividade inteira, não só para aquele
+  clone — o mesmo aviso aparece como texto no próprio formulário.
+- **`useCronograma.editarAtividade`:** salva no backend primeiro (não é
+  otimista, diferente de mover/redimensionar — aqui nada foi desenhado
+  antes pela lib) e depois espelha a atividade devolvida na pool e em cada
+  alocação dela, sem tocar em dia/horário/duração dos clones. Se o backend
+  recusar, nada muda na tela e o erro aparece no aviso `.app-erro`.
+- **Primeiro teste de `CalendarioSemanal`** (`CalendarioSemanal.test.tsx`):
+  o FullCalendar renderiza no jsdom o bastante para clicar num card e
+  abrir o menu (só precisou de um `ResizeObserver` falso). Cobre só o menu e
+  a edição — arrastar/redimensionar continuam sem teste de UI (seção 6).
+- **CSS:** `.atividade-card__excluir` virou `.atividade-card__acao`,
+  compartilhada pelos botões "Editar" e "Excluir" da pool. Efeito
+  colateral: com dois botões, nomes longos na pool truncam mais cedo
+  (reticências); o nome completo continua visível nos cards do calendário e
+  no formulário de edição.
+- **Testes:** 16 novos (81/81 no frontend). Verificado também no app real
+  com um usuário descartável: editar pela pool e pelo card atualizou a pool
+  e os dois clones (segunda e sexta) na hora, o nome duplicado foi
+  bloqueado, e tudo continuou igual depois de recarregar a página.
+
+### 7.17. Correção: redimensionar um card fazia a página inteira sumir (25/09/2026)
+
+Lucas encontrou o defeito: ao mudar a duração de uma alocação arrastando a
+borda do card, a tela ficava em branco.
+
+- **Sintoma técnico:** `TypeError: Cannot read properties of undefined
+  (reading 'split')` em `paraDataDoEvento` (`CalendarioSemanal`). Um erro
+  durante o render sem Error Boundary desmonta a árvore React inteira —
+  por isso sumia a página toda, não só o card.
+- **Causa raiz (backend):** `tsconfig.json` usa `target: ES2023`, o que liga
+  `useDefineForClassFields`. Com isso, todo campo opcional de um DTO de
+  PATCH vira propriedade própria valendo `undefined` — um redimensionamento
+  (`{ duracaoMinutos }`) chegava como `{ diaSemana: undefined, horaInicio:
+  undefined, duracaoMinutos }`. O `Object.assign(entidade, dto)` em
+  `AlocacoesService.atualizar` sobrescrevia os valores atuais com
+  `undefined`; o TypeORM ignora `undefined` no UPDATE (o banco sempre ficou
+  certo), mas **a resposta do PATCH saía sem os campos não enviados**. O
+  frontend (seção 7.15) põe essa resposta direto no estado, e o card sem
+  `horaInicio` quebrava o render. Mover tinha o mesmo problema ao contrário
+  (resposta sem `duracaoMinutos`), só que sem erro visível. O mesmo padrão
+  existia em `AtividadesService.atualizar` (PATCH só com `cor` devolvia a
+  atividade sem `nome`) — latente, porque o formulário de edição (seção
+  7.16) sempre manda os dois campos.
+- **Por que os testes não pegaram:** os e2e de PATCH conferiam o resultado
+  com um `GET` depois, nunca o corpo da resposta do próprio PATCH; e os
+  testes do `useCronograma` mockam a API devolvendo objetos completos. Na
+  verificação manual da seção 7.15, mover um card foi conferido no banco,
+  não na tela — o card sem duração passou despercebido.
+- **Correção:** `src/common/sem-campos-indefinidos.ts` (novo) descarta os
+  campos `undefined` do DTO antes do `Object.assign`, nos dois serviços.
+  Preferido a desligar `useDefineForClassFields` no tsconfig, que mudaria a
+  semântica de todas as classes do backend (entidades do TypeORM inclusive)
+  para resolver um problema de dois pontos.
+- **Testes:** os e2e de "Mover" e "Redimensionar" passaram a conferir o
+  corpo completo da resposta do PATCH, e um e2e novo cobre "Editar só a cor
+  de uma atividade" (resposta e pool) — os 3 falhavam antes da correção;
+  18/18 e2e passando depois. Verificado no navegador: redimensionar e mover
+  mantêm a página e os demais campos do card, e sobrevivem a um reload.
+
+### 7.18. Error Boundary: nenhum erro de render deixa a página em branco (25/09/2026)
+
+Consequência direta da seção 7.17: um único dado inesperado vindo da API
+desmontava a árvore React inteira. Pedido do Lucas: implementar um Error
+Boundary.
+
+- **`components/ErrorBoundary.tsx`** (novo): class component — o React 19
+  ainda não tem hook para `getDerivedStateFromError`/`componentDidCatch`.
+  Troca a parte quebrada por uma mensagem (`role="alert"`, `.erro-tela`)
+  que avisa que os dados continuam salvos (tudo passa pelo backend antes de
+  ir pra tela, seção 7.15) e oferece "Tentar novamente". O erro vai para o
+  `console.error` com o component stack.
+- **"Tentar novamente" só limpa o erro:** os filhos já foram desmontados
+  quando o erro aconteceu, então voltam do zero — no cronograma, isso
+  recarrega atividades e alocações do backend, descartando o estado que
+  quebrou. Se o erro persistir, a mensagem volta (sem tela em branco).
+- **Dois níveis, mesmo componente:**
+  - em volta do `Cronograma` (dentro de `TelaAutenticada`, em `App.tsx`):
+    onde os erros de fato acontecem; como fica *dentro* do
+    `TelaAutenticada`, o botão "Deslogar" continua na tela e funcionando;
+  - em volta do `App` inteiro (`main.tsx`): rede de segurança para qualquer
+    outro ponto (ex.: tela de login).
+- **Limite conhecido:** Error Boundaries do React só capturam erros de
+  render e de ciclo de vida — erros em handlers de evento e em código
+  assíncrono não passam por eles. Falhas de API já são tratadas à parte
+  (aviso `.app-erro` em `useCronograma`).
+- **Testes:** 7 novos (88/88 no frontend) — `ErrorBoundary.test.tsx`
+  (comportamento) e `App.test.tsx` (posicionamento: erro no cronograma
+  mostra a mensagem e mantém o "Deslogar" funcionando; falhava antes, com o
+  erro subindo sem tratamento). Verificado no navegador reproduzindo o
+  defeito da seção 7.17 sem mexer no código — interceptando `GET
+  /alocacoes` via Playwright e removendo `horaInicio` da resposta: a
+  mensagem apareceu com o "Deslogar" disponível e, sem a interceptação,
+  "Tentar novamente" trouxe o cronograma de volta.
 
 ## 8. Requisitos funcionais
 

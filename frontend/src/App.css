@@ -1,3 +1,9 @@
+.app-deslogar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 32px 0;
+}
+
 .app-shell {
   flex: 1;
   display: flex;
@@ -18,9 +24,57 @@
   border-bottom: 1px solid var(--border);
 }
 
+.app-header__titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-header__eyebrow {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
 .app-header h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 44px;
+}
+
+/* Erro inesperado de render capturado pelo ErrorBoundary
+   (components/ErrorBoundary.tsx) — no lugar do cronograma ou da tela toda. */
+.erro-tela {
+  max-width: 520px;
+  margin: 64px auto;
+  padding: 28px 32px;
+  border: 1px solid var(--accent-border);
+  border-radius: 18px;
+  background: var(--code-bg);
+  box-shadow: var(--shadow);
+  text-align: left;
+}
+
+.erro-tela h2 {
+  margin: 0 0 8px;
+}
+
+.erro-tela p {
+  margin: 0 0 20px;
+  color: var(--text);
+}
+
+/* Falha ao salvar/carregar no backend (ver useCronograma). */
+.app-erro {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  background: var(--accent-bg);
+  color: var(--text-h);
+  font: 14px/1.4 var(--sans);
 }
 
 .config-toolbar {
@@ -32,18 +86,23 @@
 .config-toolbar__campo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   color: var(--text);
 }
 
 .config-toolbar__campo select {
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--code-bg);
   color: var(--text-h);
-  font: inherit;
+  font: 14px/1 var(--sans);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .app-corpo {
@@ -61,7 +120,7 @@
   min-width: 0;
   background: var(--code-bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 16px;
   box-shadow: var(--shadow);
 }
@@ -77,16 +136,91 @@
   color: var(--text-h);
 }
 
-.calendario-semanal .fc-col-header-cell-cushion,
+.calendario-semanal .fc-col-header-cell-cushion {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-h);
+}
+
 .calendario-semanal .fc-timegrid-slot-label-cushion {
+  font-size: 11px;
   color: var(--text);
 }
 
 .calendario-semanal .fc-event {
-  border-radius: 6px;
+  border-radius: 12px;
   border-width: 0;
-  padding: 2px 4px;
+  padding: 4px 8px;
+  box-shadow: 0 4px 10px -6px rgba(0, 0, 0, 0.35);
   cursor: pointer;
+}
+
+.calendario-semanal .fc-event-title {
+  font-family: var(--heading);
+  font-size: 14px;
+}
+
+.calendario-semanal .fc-event-time {
+  font-family: var(--sans);
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+/* Card de alocação "de uma linha só" (ver ajustarLinhaUnica em
+   CalendarioSemanal.tsx): horário e título dividem a mesma linha em vez do
+   layout padrão empilhado (horário numa linha, título embaixo). Quem decide
+   quando aplicar a classe é o JS, medindo a altura real renderizada — por
+   isso a detecção própria do FullCalendar (`fc-timegrid-event-short`) é
+   neutralizada aqui, pra não haver duas fontes de verdade competindo (o
+   limiar dela não corresponde de forma confiável à altura em pixels, ver o
+   comentário de ALTURA_MINIMA_PARA_DUAS_LINHAS_PX). */
+.calendario-semanal .fc-timegrid-event-short .fc-event-main-frame {
+  flex-direction: column;
+  overflow: visible;
+}
+
+.calendario-semanal .fc-timegrid-event-short .fc-event-time::after {
+  content: none;
+}
+
+/* `overflow: visible` (não `hidden`): com `align-items: baseline`, o
+   título (font-size 14px, ~26px de altura de linha) fica mais alto que o
+   horário (11px, ~18px) — em cards curtos (poucos minutos de duração, ou
+   posicionados bem antes de uma virada de hora/meia-hora, onde a altura em
+   pixels calculada pelo FullCalendar para o card fica bem próxima da altura
+   do próprio horário), o frame só tem altura de sobra pro horário, e o
+   título — alinhado pela mesma base de texto — acaba se estendendo abaixo
+   do frame. Com `overflow: hidden` aqui, essa sobra ficava cortada (a parte
+   de baixo do título sumia). O truncamento horizontal do título continua
+   funcionando igual, via `overflow: hidden` no próprio `.fc-event-title`
+   (ver abaixo) — não depende do frame. */
+.calendario-semanal .fc-event--linha-unica .fc-event-main-frame {
+  flex-direction: row;
+  align-items: baseline;
+  overflow: visible;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-time {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-time::after {
+  content: '\00a0—\00a0';
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-title-container {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.calendario-semanal .fc-event--linha-unica .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Pool lateral (direita) */
@@ -96,7 +230,7 @@
   flex-shrink: 0;
   background: var(--code-bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 16px;
   box-shadow: var(--shadow);
   position: sticky;
@@ -138,7 +272,7 @@
   width: 38px;
   height: 38px;
   padding: 2px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg);
   cursor: pointer;
@@ -148,7 +282,7 @@
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
@@ -176,63 +310,61 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 13px;
   border: 1px solid var(--border);
-  border-left: 4px solid;
-  background: var(--bg);
   box-shadow: var(--shadow);
-}
-
-.atividade-card__ponto {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .atividade-card__nome {
   flex: 1;
   font-size: 15px;
-  color: var(--text-h);
+  color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.atividade-card__excluir {
+/* Botões "Editar" e "Excluir" do card da pool. */
+.atividade-card__acao {
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid currentColor;
   background: transparent;
-  color: var(--text);
+  color: inherit;
   cursor: pointer;
+  opacity: 0.85;
 }
 
-.atividade-card__excluir:hover {
-  background: var(--accent-bg);
-  color: var(--accent);
-  border-color: var(--accent-border);
+.atividade-card__acao:hover {
+  opacity: 1;
 }
 
 /* Botões genéricos */
 
 .btn {
   font: inherit;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--text-h);
+  background: var(--text-h);
+  color: var(--bg);
   cursor: pointer;
 }
 
 .btn:hover {
-  border-color: var(--accent-border);
+  opacity: 0.88;
 }
 
 .btn--secundario {
-  background: transparent;
+  background: var(--code-bg);
+  border-color: var(--border);
+  color: var(--text-h);
+  opacity: 1;
+}
+
+.btn--secundario:hover {
+  border-color: var(--accent-border);
 }
 
 .btn--perigo {

@@ -59,9 +59,11 @@ export function TelaAutenticada({ autenticado, onAutenticado, onDeslogar, childr
   if (autenticado) {
     return (
       <div>
-        <button type="button" onClick={handleDeslogar}>
-          Deslogar
-        </button>
+        <div className="app-deslogar">
+          <button type="button" className="btn btn--secundario" onClick={handleDeslogar}>
+            Deslogar
+          </button>
+        </div>
         {children}
       </div>
     );

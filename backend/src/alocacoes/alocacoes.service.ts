@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Atividade } from '../atividades/entities/atividade.entity.js';
+import { semCamposIndefinidos } from '../common/sem-campos-indefinidos.js';
 import { AtualizarAlocacaoDto } from './dto/atualizar-alocacao.dto.js';
 import { CriarAlocacaoDto } from './dto/criar-alocacao.dto.js';
 import { Alocacao } from './entities/alocacao.entity.js';
@@ -62,7 +63,8 @@ export class AlocacoesService {
 
   async atualizar(usuarioId: string, id: string, dto: AtualizarAlocacaoDto) {
     const alocacao = await this.buscarDoUsuarioOuFalhar(usuarioId, id);
-    Object.assign(alocacao, dto);
+    // Só os campos enviados — ver o comentário em semCamposIndefinidos.
+    Object.assign(alocacao, semCamposIndefinidos(dto));
     const salva = await this.alocacoes.save(alocacao);
     salva.atividade = alocacao.atividade;
     return paraResposta(salva);

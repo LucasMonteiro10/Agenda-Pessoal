@@ -34,10 +34,24 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- Postgres disponível em `localhost:5432` (credenciais em `.env`)
-- Adminer (interface web do banco) em [http://localhost:8081](http://localhost:8081)
-- Backend (NestJS) em [http://localhost:3000](http://localhost:3000)
-- Frontend (React) em [http://localhost:5173](http://localhost:5173)
+Todas as portas de acesso são configuráveis via `.env`
+(`POSTGRES_PORT`, `ADMINER_PORT`, `BACKEND_PORT`, `FRONTEND_PORT`) — os
+valores abaixo são os deste ambiente local (o `.env.example` traz os
+valores originais do template, `5432`/`8081`/`3000`/`5173`; ajuste
+livremente em caso de conflito de porta na sua máquina):
+
+- Postgres disponível em `localhost:1000` (credenciais em `.env`)
+- Adminer (interface web do banco) em [http://localhost:1001](http://localhost:1001)
+- Backend (NestJS) em [http://localhost:1002](http://localhost:1002)
+- Frontend (React) em [http://localhost:1003](http://localhost:1003)
+
+> **Trocando `BACKEND_PORT`:** o `docker-compose.yml` mapeia
+> `${BACKEND_PORT}:${BACKEND_PORT}` (host e container usam a mesma
+> variável) porque o NestJS também lê `BACKEND_PORT` para decidir em que
+> porta escutar dentro do container (`backend/src/main.ts`). Se só o lado
+> host do mapeamento fosse trocado, o container continuaria escutando em
+> `3000` por padrão e a porta customizada ficaria inacessível — por isso
+> as duas pontas do mapeamento precisam usar a mesma variável.
 
 Backend e frontend rodam com hot-reload (o código local é montado dentro do
 container), então editar arquivos em `backend/src` ou `frontend/src` reflete

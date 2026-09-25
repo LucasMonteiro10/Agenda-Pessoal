@@ -1,12 +1,15 @@
-import type { EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
-import type { EventReceiveArg, EventResizeDoneArg } from '@fullcalendar/interaction';
+import type { EventClickArg, EventDropArg, EventInput, EventMountArg } from '@fullcalendar/core';
+import type { DateClickArg, EventReceiveArg, EventResizeDoneArg } from '@fullcalendar/interaction';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
+import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
+import { EditarAtividadeDialog } from '../atividades/EditarAtividadeDialog.tsx';
 import { NOME_EXIBICAO_DIA_SEMANA, paraDiaSemana, paraNumeroDiaSemana, type DiaSemana } from './dia-semana.ts';
+import { NovaAtividadeDialog } from './NovaAtividadeDialog.tsx';
 import type { Alocacao } from './tipos.ts';
 
 // Um domingo fixo e arbitrário, só como referência absoluta (nunca exibido
@@ -80,6 +83,7 @@ function paraEventoFullCalendar(alocacao: Alocacao, diaInicioSemana: DiaSemana):
     end: fim,
     backgroundColor: alocacao.atividade.cor,
     borderColor: alocacao.atividade.cor,
+    textColor: paraCorDeTextoComContraste(alocacao.atividade.cor),
     extendedProps: { atividadeId: alocacao.atividade.id },
   };
 }
@@ -93,10 +97,57 @@ function extrairDiaEHora(data: Date): { diaSemana: DiaSemana; horaInicio: string
   return { diaSemana, horaInicio };
 }
 
+// Altura mínima (px) pra caber horário numa linha e título embaixo, no
+// layout empilhado padrão — abaixo disso as duas linhas não cabem no card.
+// Calibrado nos tamanhos de fonte usados aqui (11px no horário, 14px no
+// título, ver App.css): a soma das duas linhas fica em ~32-35px.
+//
+// O FullCalendar tem uma detecção própria de "evento curto"
+// (`fc-timegrid-event-short`, ver @fullcalendar/timegrid), mas o limiar dela
+// é calculado num sistema de unidades interno, não na altura final
+// renderizada em pixels — na prática, um card de 29px de altura ficou sem
+// essa classe (o limiar documentado é 30px), preso no layout empilhado sem
+// espaço pras duas linhas: o título ficava com altura zero e sumia
+// (`.fc-event-title-container` tem `flex-grow:1`, mas sem sobra de espaço
+// vertical o resultado é 0). Por isso a decisão aqui é feita medindo a
+// altura real renderizada, não a classe da lib (que é neutralizada em
+// App.css, pra não conflitar com esta).
+const ALTURA_MINIMA_PARA_DUAS_LINHAS_PX = 34;
+
+// Card "de uma linha só": horário e título dividem a mesma linha
+// (`.fc-event--linha-unica`, ver App.css) em vez do layout padrão empilhado.
+// Se mesmo assim não couberem lado a lado, esconde o horário e deixa o
+// título ocupar a linha inteira — é o único ajuste que precisa de JS (o
+// resto — decidir empilhado vs. mesma linha — é só CSS a partir da classe).
+function ajustarLinhaUnica(elementoDoEvento: HTMLElement) {
+  const frame = elementoDoEvento.querySelector<HTMLElement>('.fc-event-main-frame');
+  const horario = elementoDoEvento.querySelector<HTMLElement>('.fc-event-time');
+  const titulo = elementoDoEvento.querySelector<HTMLElement>('.fc-event-title');
+  if (!frame || !horario || !titulo) return;
+
+  const linhaUnica = frame.clientHeight > 0 && frame.clientHeight < ALTURA_MINIMA_PARA_DUAS_LINHAS_PX;
+  elementoDoEvento.classList.toggle('fc-event--linha-unica', linhaUnica);
+
+  if (!linhaUnica) {
+    horario.style.display = '';
+    return;
+  }
+
+  // Mede com o horário visível: é ele quem toma espaço do título via
+  // flexbox (título tem `flex-shrink` + `min-width:0`), então o frame em si
+  // nunca "estoura" — quem precisa ser medido é o próprio título
+  // (`scrollWidth` maior que `clientWidth` = o texto truncaria com o
+  // horário ocupando espaço ao lado).
+  horario.style.display = '';
+  const tituloTruncaria = titulo.scrollWidth > titulo.clientWidth;
+  horario.style.display = tituloTruncaria ? 'none' : '';
+}
+
 export interface CalendarioSemanalProps {
   diaInicioSemana: DiaSemana;
   granularidadeMinutos: number;
   alocacoes: Alocacao[];
+  nomesAtividadesExistentes: string[];
   onCriarAlocacao: (atividadeId: string, diaSemana: DiaSemana, horaInicio: string) => void;
   onMoverAlocacao: (alocacaoId: string, diaSemana: DiaSemana, horaInicio: string) => void;
   onRedimensionarAlocacao: (alocacaoId: string, novaDuracaoMinutos: number) => void;
@@ -106,6 +157,13 @@ export interface CalendarioSemanalProps {
   // atividade na pool (diferente do "Excluir" da pool, que cascateia e some
   // com a atividade também — ver AtividadeItem).
   onExcluirAlocacoesDaAtividade: (atividadeId: string) => void;
+  // Clicar num espaço vazio do grid: cria uma Atividade nova e já aloca no
+  // dia/horário clicado, numa única ação (docs/requisitos.md, Feature
+  // "Criar atividade a partir de um espaço vazio do calendário").
+  onCriarAtividadeEAlocar: (nome: string, cor: string, diaSemana: DiaSemana, horaInicio: string) => void;
+  // "Editar atividade" do menu do card: edita a Atividade em si (nome/cor),
+  // não só aquele clone — reflete na pool e em todas as alocações dela.
+  onEditarAtividade: (atividadeId: string, nome: string, cor: string) => void;
 }
 
 interface MenuAberto {
@@ -119,16 +177,29 @@ export function CalendarioSemanal({
   diaInicioSemana,
   granularidadeMinutos,
   alocacoes,
+  nomesAtividadesExistentes,
   onCriarAlocacao,
   onMoverAlocacao,
   onRedimensionarAlocacao,
   onDuplicar,
   onExcluir,
   onExcluirAlocacoesDaAtividade,
+  onCriarAtividadeEAlocar,
+  onEditarAtividade,
 }: CalendarioSemanalProps) {
   const [menu, setMenu] = useState<MenuAberto | null>(null);
   const [confirmandoExclusaoDeAlocacoes, setConfirmandoExclusaoDeAlocacoes] = useState<string | null>(null);
+  const [atividadeEmEdicao, setAtividadeEmEdicao] = useState<Alocacao['atividade'] | null>(null);
+  const [espacoVazioClicado, setEspacoVazioClicado] = useState<{ diaSemana: DiaSemana; horaInicio: string } | null>(
+    null,
+  );
   const calendarioRef = useRef<FullCalendar>(null);
+  // Um ResizeObserver por card: a mesma alocação pode alternar entre "cabe
+  // horário e título juntos" e "só título" conforme a coluna do dia muda de
+  // largura (sobreposição com outra alocação, redimensionar a janela) ou de
+  // altura (duração/granularidade mudam, entrando ou saindo do modo
+  // `fc-timegrid-event-short`) — sem recriar o card.
+  const observadoresRef = useRef(new Map<HTMLElement, ResizeObserver>());
 
   // `initialDate`/`initialView` só se aplicam na primeira renderização — o
   // FullCalendar não "escuta" mudanças nessas props depois de montado (por
@@ -174,6 +245,28 @@ export function CalendarioSemanal({
     onCriarAlocacao(atividadeId, diaSemana, horaInicio);
   }
 
+  // dateClick (interactionPlugin) só dispara num espaço vazio do grid — um
+  // clique em cima de um card dispara eventClick (aoClicarEvento) em vez
+  // disso, sem também disparar este handler. `allDay` nunca deveria vir
+  // true aqui (allDaySlot={false} remove essa linha), mas a guarda evita
+  // abrir o formulário sem um horário de verdade caso a lib dispare a partir
+  // de outra região clicável (ex.: cabeçalho do dia) no futuro.
+  function aoClicarEspacoVazio(arg: DateClickArg) {
+    if (arg.allDay) return;
+    setEspacoVazioClicado(extrairDiaEHora(arg.date));
+  }
+
+  function aoMontarEvento(arg: EventMountArg) {
+    const observer = new ResizeObserver(() => ajustarLinhaUnica(arg.el));
+    observer.observe(arg.el);
+    observadoresRef.current.set(arg.el, observer);
+  }
+
+  function aoDesmontarEvento(arg: EventMountArg) {
+    observadoresRef.current.get(arg.el)?.disconnect();
+    observadoresRef.current.delete(arg.el);
+  }
+
   return (
     <div className="calendario-semanal">
       <FullCalendar
@@ -208,6 +301,9 @@ export function CalendarioSemanal({
         eventDrop={aoMover}
         eventResize={aoRedimensionar}
         eventClick={aoClicarEvento}
+        dateClick={aoClicarEspacoVazio}
+        eventDidMount={aoMontarEvento}
+        eventWillUnmount={aoDesmontarEvento}
       />
 
       {menu &&
@@ -226,6 +322,16 @@ export function CalendarioSemanal({
                 }}
               >
                 Duplicar
+              </li>
+              <li
+                role="menuitem"
+                onClick={() => {
+                  const alocacao = alocacoes.find((item) => item.id === menu.alocacaoId);
+                  setAtividadeEmEdicao(alocacao?.atividade ?? null);
+                  setMenu(null);
+                }}
+              >
+                Editar atividade
               </li>
               <li
                 role="menuitem"
@@ -260,6 +366,30 @@ export function CalendarioSemanal({
           setConfirmandoExclusaoDeAlocacoes(null);
         }}
         onCancelar={() => setConfirmandoExclusaoDeAlocacoes(null)}
+      />
+
+      {atividadeEmEdicao && (
+        <EditarAtividadeDialog
+          atividade={atividadeEmEdicao}
+          nomesExistentes={nomesAtividadesExistentes}
+          onSalvar={(nome, cor) => {
+            onEditarAtividade(atividadeEmEdicao.id, nome, cor);
+            setAtividadeEmEdicao(null);
+          }}
+          onCancelar={() => setAtividadeEmEdicao(null)}
+        />
+      )}
+
+      <NovaAtividadeDialog
+        open={espacoVazioClicado !== null}
+        nomesExistentes={nomesAtividadesExistentes}
+        onCriar={(nome, cor) => {
+          if (espacoVazioClicado) {
+            onCriarAtividadeEAlocar(nome, cor, espacoVazioClicado.diaSemana, espacoVazioClicado.horaInicio);
+          }
+          setEspacoVazioClicado(null);
+        }}
+        onCancelar={() => setEspacoVazioClicado(null)}
       />
     </div>
   );

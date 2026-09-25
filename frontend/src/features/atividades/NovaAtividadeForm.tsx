@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
+import { validarNomeAtividade } from './validarNomeAtividade.ts';
 
 export interface NovaAtividadeFormProps {
   nomesExistentes: string[];
   onCriar: (nome: string, cor: string) => void;
 }
 
-const COR_PADRAO = '#3366ff';
+const COR_PADRAO = '#b5652b';
 
 // Cenário Gherkin: docs/requisitos.md, Feature "Gerenciar pool de
 // atividades" > "Criar uma nova atividade" e "Impedir duas atividades com o
@@ -17,22 +18,13 @@ export function NovaAtividadeForm({ nomesExistentes, onCriar }: NovaAtividadeFor
 
   function aoSubmeter(evento: FormEvent) {
     evento.preventDefault();
-    const nomeLimpo = nome.trim();
-
-    if (!nomeLimpo) {
-      setErro('Digite um nome para a atividade.');
+    const mensagemDeErro = validarNomeAtividade(nome, nomesExistentes);
+    if (mensagemDeErro) {
+      setErro(mensagemDeErro);
       return;
     }
 
-    const jaExiste = nomesExistentes.some(
-      (existente) => existente.localeCompare(nomeLimpo, undefined, { sensitivity: 'base' }) === 0,
-    );
-    if (jaExiste) {
-      setErro(`Já existe uma atividade chamada "${nomeLimpo}".`);
-      return;
-    }
-
-    onCriar(nomeLimpo, cor);
+    onCriar(nome.trim(), cor);
     setNome('');
     setCor(COR_PADRAO);
     setErro(null);

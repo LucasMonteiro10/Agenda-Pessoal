@@ -1,11 +1,13 @@
 import { Draggable } from '@fullcalendar/interaction';
 import { useEffect, useRef } from 'react';
+import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
 import { AtividadeItem, type Atividade } from './AtividadeItem.tsx';
 import { NovaAtividadeForm } from './NovaAtividadeForm.tsx';
 
 export interface PoolLateralProps {
   atividades: Atividade[];
   onExcluir: (id: string) => void;
+  onEditar: (id: string, nome: string, cor: string) => void;
   onCriar: (nome: string, cor: string) => void;
 }
 
@@ -14,7 +16,8 @@ export interface PoolLateralProps {
 // este container e transforma cada `.atividade-pool-item` num item
 // arrastável externo — soltar sobre o CalendarioSemanal dispara
 // `eventReceive` lá.
-export function PoolLateral({ atividades, onExcluir, onCriar }: PoolLateralProps) {
+export function PoolLateral({ atividades, onExcluir, onEditar, onCriar }: PoolLateralProps) {
+  const nomesExistentes = atividades.map((atividade) => atividade.nome);
   const listaRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -28,6 +31,7 @@ export function PoolLateral({ atividades, onExcluir, onCriar }: PoolLateralProps
         title: el.dataset.nome,
         backgroundColor: el.dataset.cor,
         borderColor: el.dataset.cor,
+        textColor: el.dataset.cor ? paraCorDeTextoComContraste(el.dataset.cor) : undefined,
         duration: '01:00',
         extendedProps: { atividadeId: el.dataset.atividadeId },
       }),
@@ -40,7 +44,7 @@ export function PoolLateral({ atividades, onExcluir, onCriar }: PoolLateralProps
     <aside className="pool-lateral">
       <h2>Suas atividades</h2>
       <p className="pool-lateral__dica">Adicione e arraste uma atividade para o calendário.</p>
-      <NovaAtividadeForm nomesExistentes={atividades.map((atividade) => atividade.nome)} onCriar={onCriar} />
+      <NovaAtividadeForm nomesExistentes={nomesExistentes} onCriar={onCriar} />
       <ul ref={listaRef} className="pool-lateral__lista">
         {atividades.map((atividade) => (
           <li
@@ -50,7 +54,12 @@ export function PoolLateral({ atividades, onExcluir, onCriar }: PoolLateralProps
             data-nome={atividade.nome}
             data-cor={atividade.cor}
           >
-            <AtividadeItem atividade={atividade} onExcluir={onExcluir} />
+            <AtividadeItem
+              atividade={atividade}
+              nomesExistentes={nomesExistentes}
+              onExcluir={onExcluir}
+              onEditar={onEditar}
+            />
           </li>
         ))}
       </ul>

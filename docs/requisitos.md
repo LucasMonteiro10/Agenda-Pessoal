@@ -73,6 +73,19 @@ Funcionalidade: Gerenciar atividades na pool
     Então o nome e a cor devem ser atualizados na pool
     E o nome e a cor devem ser atualizados em todas as alocações existentes dessa atividade
 
+  Cenário: Editar só o nome ou só a cor de uma atividade
+    Dado que a atividade "Estudar Inglês" possui cor "#3366FF"
+    Quando eu clico em "Editar" na atividade "Estudar Inglês" da pool
+    E altero apenas a cor para "#33FF81"
+    Então a atividade deve continuar com o nome "Estudar Inglês" e passar a ter a cor "#33FF81"
+    E todas as alocações dessa atividade devem passar a ter a cor "#33FF81"
+
+  Cenário: Impedir renomear uma atividade para um nome que já existe
+    Dado que já existem as atividades "Trabalho" e "Estudar Inglês" na minha pool
+    Quando eu tento renomear "Estudar Inglês" para "Trabalho"
+    Então o sistema deve rejeitar a edição
+    E avisar que já existe uma atividade com esse nome
+
   Cenário: Editar dia, horário ou duração NÃO propaga entre clones
     Dado que a atividade "Estudar Inglês" possui uma alocação na segunda-feira das 19:00 às 20:00
     E possui outra alocação na sexta-feira das 19:00 às 20:00
@@ -124,6 +137,19 @@ Funcionalidade: Alocar atividades no grid semanal
     Quando eu crio outra alocação de "Reunião" na segunda-feira das 10:00 às 11:00
     Então ambas as alocações devem coexistir no mesmo dia e horário
     E ambos os cards devem ser exibidos lado a lado, sem bloquear a criação
+
+  Cenário: Card de alocação baixo demais pra duas linhas mostra horário e título na mesma linha
+    Dado que a altura do card de uma alocação só cabe uma linha de texto
+      (combinação de duração curta e/ou granularidade fina o suficiente)
+    Quando o card é exibido
+    Então o horário e o título da atividade devem aparecer lado a lado, na mesma linha
+
+  Cenário: Título grande demais nessa linha única esconde o horário
+    Dado que o card está no cenário anterior (uma linha só)
+    E o título da atividade é longo o suficiente pra não caber ao lado do horário
+    Quando o card é exibido
+    Então o horário deve ficar oculto
+    E o título completo (ou o máximo dele, com reticências) deve ocupar a linha inteira
 ```
 > Nota: a exibição de alocações sobrepostas segue o layout padrão do
 > FullCalendar (colunas lado a lado) — ver item 6 de "Suposições e decisões
@@ -132,6 +158,46 @@ Funcionalidade: Alocar atividades no grid semanal
 > Nota: a granularidade é só uma referência visual das linhas do grid — não
 > força snap nem duração mínima. Ver item 2 de "Suposições e decisões de
 > negócio".
+>
+> Nota: os dois cenários de layout do card (uma linha vs. horário oculto)
+> não têm teste automatizado — dependem de layout real (altura/largura
+> renderizada), que o jsdom/RTL não reproduz (mesma limitação já registrada
+> pros cards de drag-and-drop, CLAUDE.md seção 7.6). Verificados manualmente
+> no navegador; decisões técnicas em CLAUDE.md, seção 7.13.
+
+## Feature: Criar atividade a partir de um espaço vazio do calendário
+
+```gherkin
+Funcionalidade: Criar atividade diretamente no calendário
+
+  Cenário: Clicar em um espaço vazio abre um formulário de nova atividade
+    Dado que estou autenticado
+    Quando eu clico em um espaço vazio do calendário na quarta-feira às 14:00
+    Então o sistema deve exibir um formulário pedindo o nome e a cor da nova atividade
+
+  Cenário: Confirmar o formulário cria a atividade e já aloca no horário clicado
+    Dado que cliquei em um espaço vazio do calendário na quarta-feira às 14:00
+    Quando eu preencho o nome "Yoga" e a cor "#4B6B4F" e confirmo
+    Então a atividade "Yoga" deve aparecer na pool
+    E uma alocação de "Yoga" deve aparecer na quarta-feira às 14:00
+
+  Cenário: Impedir nome duplicado também neste formulário
+    Dado que já existe uma atividade "Trabalho" na minha pool
+    E cliquei em um espaço vazio do calendário
+    Quando eu tento criar uma atividade com nome "Trabalho" por esse formulário
+    Então o sistema deve rejeitar a criação
+    E avisar que já existe uma atividade com esse nome
+
+  Cenário: Cancelar o formulário não cria nada
+    Dado que cliquei em um espaço vazio do calendário
+    Quando eu cancelo o formulário sem confirmar
+    Então nenhuma atividade nova deve aparecer na pool
+    E nenhuma alocação nova deve aparecer no calendário
+```
+> Nota: clicar sobre um card existente não abre este formulário — continua
+> abrindo o menu de opções (ver Feature "Interagir com um card de alocação").
+> A nova alocação criada por este formulário usa a mesma duração padrão de
+> 1h das demais alocações criadas por arraste da pool.
 
 ## Feature: Interagir com um card de alocação
 
@@ -141,7 +207,15 @@ Funcionalidade: Opções de um card de alocação no calendário
   Cenário: Clicar em um card abre o menu de opções
     Dado que existe uma alocação de "Estudar Inglês" na segunda-feira às 19:00 por 1h
     Quando eu clico sobre o card dessa alocação
-    Então o sistema deve exibir as opções "Duplicar", "Excluir" e "Excluir alocações"
+    Então o sistema deve exibir as opções "Duplicar", "Editar atividade", "Excluir" e "Excluir alocações"
+
+  Cenário: Editar a atividade a partir de um card reflete na pool e em todos os clones
+    Dado que a atividade "Estudar Inglês" possui alocações na segunda-feira e na sexta-feira
+    Quando eu clico em "Editar atividade" nas opções do card da alocação de segunda-feira
+    E altero o nome para "Inglês - Duolingo" e a cor para "#33FF81"
+    Então a atividade deve aparecer como "Inglês - Duolingo" com a cor "#33FF81" na pool
+    E as alocações de segunda-feira e de sexta-feira devem exibir o novo nome e a nova cor
+    E o dia, o horário e a duração de cada alocação devem continuar os mesmos
 
   Cenário: Duplicar cria um clone logo abaixo do card original
     Dado que existe uma alocação de "Estudar Inglês" na segunda-feira às 19:00 por 1h
@@ -287,6 +361,13 @@ Funcionalidade: Autenticação de usuário
     Dado que existem dois usuários, A e B, cada um com atividades cadastradas
     Quando o usuário A faz login
     Então ele deve ver apenas as atividades e alocações que ele criou
+
+  Cenário: Atividades e alocações continuam salvas depois de recarregar a página
+    Dado que estou autenticado
+    E que eu criei atividades e as aloquei no calendário
+    Quando eu recarrego a página (ou o ambiente é reiniciado)
+    Então eu devo continuar vendo as mesmas atividades na pool
+    E as mesmas alocações no calendário
 ```
 
 ---

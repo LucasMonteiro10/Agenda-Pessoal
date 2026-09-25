@@ -1,30 +1,18 @@
 import { useState } from 'react'
 import './App.css'
-import type { Atividade } from './features/atividades/AtividadeItem.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { PoolLateral } from './features/atividades/PoolLateral.tsx'
 import { TelaAutenticada } from './features/auth/TelaAutenticada.tsx'
 import { CalendarioSemanal } from './features/calendario/CalendarioSemanal.tsx'
 import type { DiaSemana } from './features/calendario/dia-semana.ts'
 import { LimparCalendarioButton } from './features/calendario/LimparCalendarioButton.tsx'
 import { SeletorConfiguracoes } from './features/calendario/SeletorConfiguracoes.tsx'
-import type { Alocacao } from './features/calendario/tipos.ts'
+import { useCronograma } from './features/cronograma/useCronograma.ts'
 
 const CHAVE_ACCESS_TOKEN = 'accessToken'
 
-// Composição de demonstração — estado local só nesta tela, sem Redux nem
-// chamadas de API ainda para Atividade/Alocação. A integração de verdade
-// (store + backend) é um passo separado; só a autenticação (TelaAutenticada)
-// já fala com o backend de fato.
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(() => localStorage.getItem(CHAVE_ACCESS_TOKEN))
-  const [atividades, setAtividades] = useState<Atividade[]>([
-    { id: 'a1', nome: 'Trabalho', cor: '#3366FF' },
-    { id: 'a2', nome: 'Estudar Inglês', cor: '#33AA55' },
-    { id: 'a3', nome: 'Almoço', cor: '#FFAA00' },
-  ])
-  const [alocacoes, setAlocacoes] = useState<Alocacao[]>([])
-  const [diaInicioSemana, setDiaInicioSemana] = useState<DiaSemana>('domingo')
-  const [granularidadeMinutos, setGranularidadeMinutos] = useState(30)
 
   function autenticar(token: string) {
     localStorage.setItem(CHAVE_ACCESS_TOKEN, token)
@@ -36,75 +24,79 @@ function App() {
     setAccessToken(null)
   }
 
-  // Botão "Excluir" da pool: remove a atividade e todas as suas alocações
-  // (cascata) — a atividade some da pool também.
-  function excluirAtividade(atividadeId: string) {
-    setAtividades((atual) => atual.filter((item) => item.id !== atividadeId))
-    setAlocacoes((atual) => atual.filter((alocacao) => alocacao.atividade.id !== atividadeId))
-  }
-
-  // "Excluir alocações" a partir do menu do card: limpa só as alocações
-  // daquela atividade no calendário — a atividade continua na pool.
-  function excluirAlocacoesDaAtividade(atividadeId: string) {
-    setAlocacoes((atual) => atual.filter((alocacao) => alocacao.atividade.id !== atividadeId))
-  }
-
+  // `Cronograma` só é montado com um token em mãos — deslogar desmonta o
+  // componente e descarta o estado do usuário anterior junto. O
+  // ErrorBoundary fica aqui dentro (e não em volta do TelaAutenticada) para
+  // que, se o cronograma quebrar, o botão "Deslogar" continue na tela.
   return (
     <TelaAutenticada autenticado={accessToken !== null} onAutenticado={autenticar} onDeslogar={deslogar}>
-      <main className="app-shell">
-        <header className="app-header">
-          <h1>Cronograma Pessoal</h1>
-          <SeletorConfiguracoes
-            diaInicioSemana={diaInicioSemana}
-            granularidadeMinutos={granularidadeMinutos}
-            onAlterarDiaInicioSemana={setDiaInicioSemana}
-            onAlterarGranularidade={setGranularidadeMinutos}
-          />
-          <LimparCalendarioButton onLimpar={() => setAlocacoes([])} />
-        </header>
-
-        <div className="app-corpo">
-          <CalendarioSemanal
-            diaInicioSemana={diaInicioSemana}
-            granularidadeMinutos={granularidadeMinutos}
-            alocacoes={alocacoes}
-            onCriarAlocacao={(atividadeId, diaSemana, horaInicio) => {
-              const atividade = atividades.find((item) => item.id === atividadeId)
-              if (!atividade) return
-              setAlocacoes((atual) => [
-                ...atual,
-                { id: crypto.randomUUID(), atividade, diaSemana, horaInicio, duracaoMinutos: 60 },
-              ])
-            }}
-            onMoverAlocacao={(id, diaSemana, horaInicio) => {
-              setAlocacoes((atual) =>
-                atual.map((alocacao) => (alocacao.id === id ? { ...alocacao, diaSemana, horaInicio } : alocacao)),
-              )
-            }}
-            onRedimensionarAlocacao={(id, duracaoMinutos) => {
-              setAlocacoes((atual) =>
-                atual.map((alocacao) => (alocacao.id === id ? { ...alocacao, duracaoMinutos } : alocacao)),
-              )
-            }}
-            onDuplicar={(id) => {
-              const original = alocacoes.find((alocacao) => alocacao.id === id)
-              if (!original) return
-              setAlocacoes((atual) => [...atual, { ...original, id: crypto.randomUUID() }])
-            }}
-            onExcluir={(id) => setAlocacoes((atual) => atual.filter((alocacao) => alocacao.id !== id))}
-            onExcluirAlocacoesDaAtividade={excluirAlocacoesDaAtividade}
-          />
-
-          <PoolLateral
-            atividades={atividades}
-            onExcluir={excluirAtividade}
-            onCriar={(nome, cor) => {
-              setAtividades((atual) => [...atual, { id: crypto.randomUUID(), nome, cor }])
-            }}
-          />
-        </div>
-      </main>
+      {accessToken && (
+        <ErrorBoundary>
+          <Cronograma accessToken={accessToken} onNaoAutorizado={deslogar} />
+        </ErrorBoundary>
+      )}
     </TelaAutenticada>
+  )
+}
+
+interface CronogramaProps {
+  accessToken: string
+  onNaoAutorizado: () => void
+}
+
+// Atividades e Alocações vêm do backend (useCronograma) — cada ação é salva
+// no banco, então nada se perde ao recarregar a página.
+function Cronograma({ accessToken, onNaoAutorizado }: CronogramaProps) {
+  const cronograma = useCronograma(accessToken, onNaoAutorizado)
+  const [diaInicioSemana, setDiaInicioSemana] = useState<DiaSemana>('domingo')
+  const [granularidadeMinutos, setGranularidadeMinutos] = useState(30)
+
+  return (
+    <main className="app-shell">
+      <header className="app-header">
+        <div className="app-header__titulo">
+          <span className="app-header__eyebrow">Semana recorrente</span>
+          <h1>Cronograma Pessoal</h1>
+        </div>
+        <SeletorConfiguracoes
+          diaInicioSemana={diaInicioSemana}
+          granularidadeMinutos={granularidadeMinutos}
+          onAlterarDiaInicioSemana={setDiaInicioSemana}
+          onAlterarGranularidade={setGranularidadeMinutos}
+        />
+        <LimparCalendarioButton onLimpar={cronograma.limparCalendario} />
+      </header>
+
+      {cronograma.erro && (
+        <p role="alert" className="app-erro">
+          {cronograma.erro}
+        </p>
+      )}
+
+      <div className="app-corpo">
+        <CalendarioSemanal
+          diaInicioSemana={diaInicioSemana}
+          granularidadeMinutos={granularidadeMinutos}
+          alocacoes={cronograma.alocacoes}
+          nomesAtividadesExistentes={cronograma.atividades.map((atividade) => atividade.nome)}
+          onCriarAlocacao={cronograma.criarAlocacao}
+          onMoverAlocacao={cronograma.moverAlocacao}
+          onRedimensionarAlocacao={cronograma.redimensionarAlocacao}
+          onDuplicar={cronograma.duplicarAlocacao}
+          onExcluir={cronograma.excluirAlocacao}
+          onExcluirAlocacoesDaAtividade={cronograma.excluirAlocacoesDaAtividade}
+          onCriarAtividadeEAlocar={cronograma.criarAtividadeEAlocar}
+          onEditarAtividade={cronograma.editarAtividade}
+        />
+
+        <PoolLateral
+          atividades={cronograma.atividades}
+          onExcluir={cronograma.excluirAtividade}
+          onEditar={cronograma.editarAtividade}
+          onCriar={cronograma.criarAtividade}
+        />
+      </div>
+    </main>
   )
 }
 
