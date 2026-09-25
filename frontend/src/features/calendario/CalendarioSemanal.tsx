@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { paraCorDeTextoComContraste } from '../../utils/cor.ts';
+import { EditarAtividadeDialog } from '../atividades/EditarAtividadeDialog.tsx';
 import { NOME_EXIBICAO_DIA_SEMANA, paraDiaSemana, paraNumeroDiaSemana, type DiaSemana } from './dia-semana.ts';
 import { NovaAtividadeDialog } from './NovaAtividadeDialog.tsx';
 import type { Alocacao } from './tipos.ts';
@@ -160,6 +161,9 @@ export interface CalendarioSemanalProps {
   // dia/horário clicado, numa única ação (docs/requisitos.md, Feature
   // "Criar atividade a partir de um espaço vazio do calendário").
   onCriarAtividadeEAlocar: (nome: string, cor: string, diaSemana: DiaSemana, horaInicio: string) => void;
+  // "Editar atividade" do menu do card: edita a Atividade em si (nome/cor),
+  // não só aquele clone — reflete na pool e em todas as alocações dela.
+  onEditarAtividade: (atividadeId: string, nome: string, cor: string) => void;
 }
 
 interface MenuAberto {
@@ -181,9 +185,11 @@ export function CalendarioSemanal({
   onExcluir,
   onExcluirAlocacoesDaAtividade,
   onCriarAtividadeEAlocar,
+  onEditarAtividade,
 }: CalendarioSemanalProps) {
   const [menu, setMenu] = useState<MenuAberto | null>(null);
   const [confirmandoExclusaoDeAlocacoes, setConfirmandoExclusaoDeAlocacoes] = useState<string | null>(null);
+  const [atividadeEmEdicao, setAtividadeEmEdicao] = useState<Alocacao['atividade'] | null>(null);
   const [espacoVazioClicado, setEspacoVazioClicado] = useState<{ diaSemana: DiaSemana; horaInicio: string } | null>(
     null,
   );
@@ -320,6 +326,16 @@ export function CalendarioSemanal({
               <li
                 role="menuitem"
                 onClick={() => {
+                  const alocacao = alocacoes.find((item) => item.id === menu.alocacaoId);
+                  setAtividadeEmEdicao(alocacao?.atividade ?? null);
+                  setMenu(null);
+                }}
+              >
+                Editar atividade
+              </li>
+              <li
+                role="menuitem"
+                onClick={() => {
                   onExcluir(menu.alocacaoId);
                   setMenu(null);
                 }}
@@ -351,6 +367,18 @@ export function CalendarioSemanal({
         }}
         onCancelar={() => setConfirmandoExclusaoDeAlocacoes(null)}
       />
+
+      {atividadeEmEdicao && (
+        <EditarAtividadeDialog
+          atividade={atividadeEmEdicao}
+          nomesExistentes={nomesAtividadesExistentes}
+          onSalvar={(nome, cor) => {
+            onEditarAtividade(atividadeEmEdicao.id, nome, cor);
+            setAtividadeEmEdicao(null);
+          }}
+          onCancelar={() => setAtividadeEmEdicao(null)}
+        />
+      )}
 
       <NovaAtividadeDialog
         open={espacoVazioClicado !== null}

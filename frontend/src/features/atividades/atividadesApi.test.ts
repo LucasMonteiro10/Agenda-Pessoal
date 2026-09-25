@@ -1,5 +1,5 @@
 import * as http from '../../api/http.ts';
-import { criarAtividade, excluirAtividade, listarAtividades } from './atividadesApi.ts';
+import { atualizarAtividade, criarAtividade, excluirAtividade, listarAtividades } from './atividadesApi.ts';
 
 vi.mock('../../api/http.ts');
 
@@ -23,6 +23,16 @@ describe('atividadesApi', () => {
     expect(http.requisitar).toHaveBeenCalledWith('/atividades', {
       metodo: 'POST',
       corpo: { nome: 'Trabalho', cor: '#2F4B3C' },
+      accessToken: 'token-123',
+    });
+  });
+
+  it('atualizarAtividade faz PATCH /atividades/:id com nome e cor', async () => {
+    await atualizarAtividade('token-123', 'a1', { nome: 'Inglês - Duolingo', cor: '#33FF81' });
+
+    expect(http.requisitar).toHaveBeenCalledWith('/atividades/a1', {
+      metodo: 'PATCH',
+      corpo: { nome: 'Inglês - Duolingo', cor: '#33FF81' },
       accessToken: 'token-123',
     });
   });

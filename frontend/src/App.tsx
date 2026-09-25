@@ -79,11 +79,13 @@ function Cronograma({ accessToken, onNaoAutorizado }: CronogramaProps) {
           onExcluir={cronograma.excluirAlocacao}
           onExcluirAlocacoesDaAtividade={cronograma.excluirAlocacoesDaAtividade}
           onCriarAtividadeEAlocar={cronograma.criarAtividadeEAlocar}
+          onEditarAtividade={cronograma.editarAtividade}
         />
 
         <PoolLateral
           atividades={cronograma.atividades}
           onExcluir={cronograma.excluirAtividade}
+          onEditar={cronograma.editarAtividade}
           onCriar={cronograma.criarAtividade}
         />
       </div>

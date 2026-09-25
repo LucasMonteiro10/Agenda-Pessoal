@@ -109,6 +109,18 @@ export function useCronograma(accessToken: string, onNaoAutorizado: () => void) 
         setAtividades((atual) => [...atual, nova]);
       }),
 
+    // Cenário "Editar nome e cor propaga para todos os clones": no backend
+    // isso sai de graça (join); aqui espelhamos na pool e em cada alocação
+    // da atividade, sem tocar em dia/horário/duração dos clones.
+    editarAtividade: (atividadeId: string, nome: string, cor: string) =>
+      executar(async () => {
+        const editada = await atividadesApi.atualizarAtividade(accessToken, atividadeId, { nome, cor });
+        setAtividades((atual) => atual.map((atividade) => (atividade.id === atividadeId ? editada : atividade)));
+        setAlocacoes((atual) =>
+          atual.map((alocacao) => (alocacao.atividade.id === atividadeId ? { ...alocacao, atividade: editada } : alocacao)),
+        );
+      }),
+
     // O backend cascateia a exclusão para as alocações; aqui só espelhamos.
     excluirAtividade: (atividadeId: string) =>
       executar(async () => {

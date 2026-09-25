@@ -650,8 +650,9 @@ usuário sumiam.
     `ErroHttp` com `status` (além da mensagem do NestJS). `authApi.ts` passou
     a usá-lo em vez de ter sua própria cópia.
   - `atividadesApi.ts` / `alocacoesApi.ts` (novos): uma função fininha por
-    rota do contrato da seção 7.3. `PATCH /atividades/:id` ficou de fora —
-    ainda não há tela de edição (regra 5).
+    rota do contrato da seção 7.3. `PATCH /atividades/:id` ficou de fora
+    nesta rodada — ainda não havia tela de edição (regra 5); entrou na
+    seção 7.16.
   - `useCronograma` (novo hook, `src/features/cronograma/`): carrega
     atividades e alocações do backend ao montar e salva cada ação antes de
     refleti-la na tela. **Exceção — mover/redimensionar são otimistas:** o
@@ -673,6 +674,51 @@ usuário sumiam.
   recarregar a página", em `docs/requisitos.md`). Verificado também no app
   real: criar atividade + alocação, `docker compose down` / `up`, tudo
   continuou lá; mover um card gravou o novo horário no Postgres.
+
+### 7.16. Editar nome/cor de uma atividade pela pool ou pelo card (25/09/2026)
+
+Pedido do Lucas: editar nome e/ou cor de uma atividade, tanto na pool quanto
+a partir de um clone no calendário, refletindo em todas as ocorrências.
+
+- **Backend: nada mudou.** `PATCH /atividades/:id` já existia (Dia 4) e a
+  propagação para os clones já saía de graça da modelagem (seção 7.3 —
+  Alocação só guarda `atividadeId`; nome/cor vêm de join). O cenário
+  "Editar nome e cor propaga para todos os clones" já tinha teste e2e.
+- **Cenários Gherkin novos** em `docs/requisitos.md` (para revisão do
+  Lucas): "Editar só o nome ou só a cor de uma atividade", "Impedir
+  renomear uma atividade para um nome que já existe" e "Editar a atividade a
+  partir de um card reflete na pool e em todos os clones". O cenário "Clicar
+  em um card abre o menu de opções" passou a listar "Editar atividade".
+- **`EditarAtividadeDialog`** (novo, `features/atividades/`): um só
+  formulário para os dois pontos de entrada — botão "Editar" no card da
+  pool (`AtividadeItem`) e opção "Editar atividade" no menu do card do
+  calendário (`CalendarioSemanal`). Reaproveita `validarNomeAtividade`,
+  descontando o nome da própria atividade (manter o nome ou mudar só
+  maiúsculas/minúsculas não conta como duplicado). Diferente do
+  `NovaAtividadeDialog`, não tem prop `open`: é montado só enquanto a edição
+  está aberta, então sempre nasce com o nome/cor atuais sem precisar
+  resetar estado à mão.
+- **Rótulo "Editar atividade" (não só "Editar") no menu do card:** deixa
+  claro que a mudança vale para a atividade inteira, não só para aquele
+  clone — o mesmo aviso aparece como texto no próprio formulário.
+- **`useCronograma.editarAtividade`:** salva no backend primeiro (não é
+  otimista, diferente de mover/redimensionar — aqui nada foi desenhado
+  antes pela lib) e depois espelha a atividade devolvida na pool e em cada
+  alocação dela, sem tocar em dia/horário/duração dos clones. Se o backend
+  recusar, nada muda na tela e o erro aparece no aviso `.app-erro`.
+- **Primeiro teste de `CalendarioSemanal`** (`CalendarioSemanal.test.tsx`):
+  o FullCalendar renderiza no jsdom o bastante para clicar num card e
+  abrir o menu (só precisou de um `ResizeObserver` falso). Cobre só o menu e
+  a edição — arrastar/redimensionar continuam sem teste de UI (seção 6).
+- **CSS:** `.atividade-card__excluir` virou `.atividade-card__acao`,
+  compartilhada pelos botões "Editar" e "Excluir" da pool. Efeito
+  colateral: com dois botões, nomes longos na pool truncam mais cedo
+  (reticências); o nome completo continua visível nos cards do calendário e
+  no formulário de edição.
+- **Testes:** 16 novos (81/81 no frontend). Verificado também no app real
+  com um usuário descartável: editar pela pool e pelo card atualizou a pool
+  e os dois clones (segunda e sexta) na hora, o nome duplicado foi
+  bloqueado, e tudo continuou igual depois de recarregar a página.
 
 ## 8. Requisitos funcionais
 

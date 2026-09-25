@@ -75,6 +75,43 @@ describe('useCronograma', () => {
     expect(result.current.alocacoes).toEqual([almocoSegunda]);
   });
 
+  it('Cenário: Editar nome e cor propaga para a pool e para todos os clones da atividade', async () => {
+    // Dado que a atividade "Trabalho" possui alocações na segunda-feira e na sexta-feira
+    const trabalhoSexta: Alocacao = { ...trabalhoSegunda, id: 'l3', diaSemana: 'sexta-feira', horaInicio: '19:00' };
+    vi.mocked(alocacoesApi.listarAlocacoes).mockResolvedValue([trabalhoSegunda, almocoSegunda, trabalhoSexta]);
+    const editada = { id: 'a1', nome: 'Trabalho remoto', cor: '#33FF81' };
+    vi.mocked(atividadesApi.atualizarAtividade).mockResolvedValue(editada);
+    const { result } = await renderizarCarregado();
+
+    // Quando eu altero o nome e a cor da atividade
+    await act(() => result.current.editarAtividade('a1', 'Trabalho remoto', '#33FF81'));
+
+    expect(atividadesApi.atualizarAtividade).toHaveBeenCalledWith(TOKEN, 'a1', {
+      nome: 'Trabalho remoto',
+      cor: '#33FF81',
+    });
+    // Então o nome e a cor devem ser atualizados na pool
+    expect(result.current.atividades).toEqual([editada, almoco]);
+    // E em todas as alocações dessa atividade — dia, horário e duração de
+    // cada clone continuam os mesmos; as de outras atividades não mudam
+    expect(result.current.alocacoes).toEqual([
+      { ...trabalhoSegunda, atividade: editada },
+      almocoSegunda,
+      { ...trabalhoSexta, atividade: editada },
+    ]);
+  });
+
+  it('se o backend recusar a edição, pool e calendário continuam como estavam e um erro é exibido', async () => {
+    vi.mocked(atividadesApi.atualizarAtividade).mockRejectedValue(new Error('Já existe uma atividade com esse nome'));
+    const { result } = await renderizarCarregado();
+
+    await act(() => result.current.editarAtividade('a1', 'Almoço', '#2F4B3C'));
+
+    expect(result.current.erro).toBe('Já existe uma atividade com esse nome');
+    expect(result.current.atividades).toEqual([trabalho, almoco]);
+    expect(result.current.alocacoes).toEqual([trabalhoSegunda, almocoSegunda]);
+  });
+
   it('criar alocação (arrastar da pool) salva no backend com duração padrão de 1 hora', async () => {
     const nova: Alocacao = { ...trabalhoSegunda, id: 'l3', diaSemana: 'terca-feira', horaInicio: '10:00' };
     vi.mocked(alocacoesApi.criarAlocacao).mockResolvedValue(nova);
