@@ -50,7 +50,7 @@ export function NovaAtividadeDialog({ open, nomesExistentes, onCriar, onCancelar
   // interno da lib.
   return createPortal(
     <div className="confirm-dialog__backdrop">
-      <div role="dialog" aria-modal="true" aria-label="Nova atividade" className="confirm-dialog">
+      <div role="dialog" aria-modal="true" aria-label="Nova atividade" className="confirm-dialog confirm-dialog--form">
         <h2>Nova atividade</h2>
         <form onSubmit={aoSubmeter}>
           <div className="nova-atividade-form__linha">
