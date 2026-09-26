@@ -885,6 +885,33 @@ Encontrado ao verificar a seção 7.20; já existia antes dela.
   toda (621px e 321px), sem rolagem horizontal, com a barra exibida ou
   recolhida; desktop (1400px) inalterado.
 
+### 7.22. Troca de fontes: Plus Jakarta Sans (26/09/2026)
+
+Pedido do Lucas: fontes modernas e um pouco mais grossas no lugar de Work
+Sans (texto) + Instrument Serif (títulos). Uma primeira versão com fontes
+"meio quadradas" (Chakra Petch + Barlow) foi descartada a pedido dele antes
+do commit — a direção final é moderna e encorpada, **sem** formas
+quadradas.
+
+- **Escolha:** Plus Jakarta Sans nos dois tokens (`--sans` e `--heading`),
+  peso 500 no texto e 700 nos títulos, via Google Fonts no `index.html`
+  (400/500/600/700). Comparada no app real com Outfit + Inter, Manrope e
+  Figtree; uma família só deixa o visual mais coeso.
+- Como as fontes já vinham dos tokens, a troca ficou em `index.css`; em
+  `App.css`: título do header 44→40px, `font-family: inherit` nos botões
+  "Editar"/"Excluir" do card da pool (não herdavam a fonte e apareciam na
+  fonte do sistema) e `line-height: 1.3` no título do card de alocação.
+- **Por que o `line-height` do card:** o `font: 18px/145%` do `:root` vira
+  um valor absoluto (26,1px) herdado por tudo. No card de 1h (granularidade
+  de 30 min), o container do título só tem ~20px; a Plus Jakarta Sans,
+  desenhada mais embaixo na linha que a serifa antiga, tinha a parte de
+  baixo das letras cortada. Com 1.3 (~18px), cabe.
+- A tela de login continua com o visual do `water.css` (seção 7.10).
+- Verificado no navegador (claro/escuro, header, pool, modal, cards de
+  15/30/60/120 min). O título vazando abaixo de cards de 15 min já
+  acontecia com as fontes antigas — é o `overflow: visible` intencional da
+  seção 7.14.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

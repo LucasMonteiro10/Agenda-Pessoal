@@ -11,11 +11,13 @@
   --shadow:
     rgba(36, 28, 20, 0.1) 0 10px 15px -3px, rgba(36, 28, 20, 0.05) 0 4px 6px -2px;
 
-  --sans: 'Work Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: 'Instrument Serif', Georgia, serif;
+  /* Plus Jakarta Sans nos dois papéis: moderna, de formas arredondadas, com
+     traço um pouco mais grosso (peso 500 no texto, 700 nos títulos). */
+  --sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
+  font: 500 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);
@@ -65,7 +67,7 @@ body {
 h1,
 h2 {
   font-family: var(--heading);
-  font-weight: 400;
+  font-weight: 700;
   color: var(--text-h);
 }
 

@@ -35,7 +35,7 @@
 
 .app-header h1 {
   margin: 0;
-  font-size: 44px;
+  font-size: 40px;
 }
 
 /* "Limpar calendário" e "Deslogar" dividem a mesma linha do header — antes
@@ -170,6 +170,11 @@
 .calendario-semanal .fc-event-title {
   font-family: var(--heading);
   font-size: 14px;
+  /* Proporcional (~18px), em vez dos 26px herdados do `:root` (145% de
+     18px): no card de 1h, o container do título só tem ~20px, e a Plus
+     Jakarta Sans, desenhada mais embaixo na linha, tinha a parte de baixo
+     das letras cortada. */
+  line-height: 1.3;
 }
 
 .calendario-semanal .fc-event-time {
@@ -195,9 +200,9 @@
   content: none;
 }
 
-/* `overflow: visible` (não `hidden`): com `align-items: baseline`, o
-   título (font-size 14px, ~26px de altura de linha) fica mais alto que o
-   horário (11px, ~18px) — em cards curtos (poucos minutos de duração, ou
+/* `overflow: visible` (não `hidden`): com `align-items: baseline`, título
+   (14px) e horário (11px) têm alturas diferentes e se alinham pela mesma
+   base de texto — em cards curtos (poucos minutos de duração, ou
    posicionados bem antes de uma virada de hora/meia-hora, onde a altura em
    pixels calculada pelo FullCalendar para o card fica bem próxima da altura
    do próprio horário), o frame só tem altura de sobra pro horário, e o
@@ -386,6 +391,7 @@
 
 /* Botões "Editar" e "Excluir" do card da pool. */
 .atividade-card__acao {
+  font-family: inherit;
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 6px;
