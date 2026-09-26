@@ -1,4 +1,4 @@
-# CLAUDE.md — Governança do Projeto "Cronograma Pessoal"
+# CLAUDE.md — Governança do Projeto "Agenda Pessoal"
 
 Este arquivo é a fonte de verdade do projeto. Qualquer assistente de IA (ou pessoa)
 trabalhando neste repositório deve ler este documento antes de propor código,
@@ -6,7 +6,7 @@ arquitetura ou testes.
 
 ## 1. Objetivo do projeto
 
-Sistema pessoal de cronograma semanal (não é um calendário com datas fixas — é um
+Sistema pessoal de agenda semanal (não é um calendário com datas fixas — é um
 quadro semanal recorrente). O usuário mantém uma **pool** de atividades (ex.:
 "Estudar Inglês", "Trabalho", "Almoço") e as posiciona livremente em um grid de
 7 dias da semana, com hora de início e duração ajustáveis visualmente.
@@ -430,8 +430,8 @@ em `App.tsx`). Implementado agora:
   "Login" (email + senha) e "Criar conta" (nome completo + email + senha)
   via um botão de alternância. Cadastro chama `POST /auth/registrar` e, em
   seguida, `POST /auth/login` automaticamente com as mesmas credenciais
-  (cadastro não devolve token) — assim quem cria conta já cai direto no
-  cronograma, sem precisar logar de novo à mão.
+  (cadastro não devolve token) — assim quem cria conta já cai direto na
+  agenda, sem precisar logar de novo à mão.
 - **`authApi.ts`** (novo): cliente fininho sobre `fetch`, usando
   `VITE_API_URL` (já provisionado desde o Dia 2, seção 3/4). Erros do
   backend (400 de validação, 401 de credenciais) são extraídos do corpo
@@ -459,7 +459,7 @@ em `App.tsx`). Implementado agora:
 ### 7.10. `water.css` só na tela de login/cadastro (19/09/2026)
 
 > **Substituída pela seção 7.23 (26/09/2026):** o `water.css` foi removido
-> e a tela de login passou a seguir o visual do cronograma. O registro
+> e a tela de login passou a seguir o visual da agenda. O registro
 > abaixo fica como histórico da decisão original.
 
 Lucas pediu pra melhorar a aparência do login/cadastro. Foram comparadas 4
@@ -475,7 +475,7 @@ explicitamente por Lucas, não uma escolha unilateral da IA.
 **Por que só na tela de login:** water.css é *classless* — estiliza
 `<body>`, `<input>`, `<button>`, `<table>` etc. direto pela tag, documento
 inteiro. Um `import 'water.css'` estático em `main.tsx` ficaria sempre
-ativo e recolocaria o cronograma inteiro também (botões da pool, da grade
+ativo e recolocaria a agenda inteira também (botões da pool, da grade
 semanal etc.), muito além do que foi pedido. Em vez disso,
 `TelaAutenticada.tsx` injeta/remove um `<link rel="stylesheet">` via
 `useEffect` amarrado à prop `autenticado`: o CSS só existe no `<head>`
@@ -490,7 +490,7 @@ quando o `<link>` entra e sai do documento.
 
 Reproduzido manualmente no navegador: tela de login com o visual do
 Water.css (inclusive dark mode automático pelo tema do sistema);
-autenticado → cronograma com o visual de sempre; deslogar → volta o
+autenticado → agenda com o visual de sempre; deslogar → volta o
 Water.css. Confirmado via DevTools que o `<link>` é removido do `<head>`
 ao autenticar (não é só uma questão de especificidade CSS escondendo o
 efeito).
@@ -658,7 +658,7 @@ usuário sumiam.
     rota do contrato da seção 7.3. `PATCH /atividades/:id` ficou de fora
     nesta rodada — ainda não havia tela de edição (regra 5); entrou na
     seção 7.16.
-  - `useCronograma` (novo hook, `src/features/cronograma/`): carrega
+  - `useAgenda` (novo hook, `src/features/agenda/`): carrega
     atividades e alocações do backend ao montar e salva cada ação antes de
     refleti-la na tela. **Exceção — mover/redimensionar são otimistas:** o
     FullCalendar já desenha o card na posição nova antes de chamar a gente;
@@ -666,15 +666,15 @@ usuário sumiam.
     onde estava. **401** (token expirado — 7 dias — ou inválido) desloga o
     usuário; outros erros aparecem num aviso `role="alert"` (`.app-erro`) no
     topo, limpo na próxima ação.
-  - `App.tsx`: dividido em `App` (autenticação) e `Cronograma` (a tela),
-    montado só quando há token — deslogar desmonta o componente e descarta
+  - `App.tsx`: dividido em `App` (autenticação) e `Agenda` (a tela),
+    montada só quando há token — deslogar desmonta o componente e descarta
     o estado do usuário anterior junto. As 3 atividades de exemplo saíram.
 - **Por que hook e não Redux Toolkit (seção 3):** o estado ainda é usado por
   uma única tela, e um hook resolve sem infraestrutura nova. Migrar para uma
   slice fica natural quando outra parte do app precisar desses dados — o
   hook já concentra toda a lógica que viraria thunks/reducers.
 - **Testes:** 30 novos (65/65 no frontend) — `http.test.ts`,
-  `atividadesApi.test.ts`, `alocacoesApi.test.ts` e `useCronograma.test.ts`
+  `atividadesApi.test.ts`, `alocacoesApi.test.ts` e `useAgenda.test.ts`
   (inclui o novo cenário "Atividades e alocações continuam salvas depois de
   recarregar a página", em `docs/requisitos.md`). Verificado também no app
   real: criar atividade + alocação, `docker compose down` / `up`, tudo
@@ -706,7 +706,7 @@ a partir de um clone no calendário, refletindo em todas as ocorrências.
 - **Rótulo "Editar atividade" (não só "Editar") no menu do card:** deixa
   claro que a mudança vale para a atividade inteira, não só para aquele
   clone — o mesmo aviso aparece como texto no próprio formulário.
-- **`useCronograma.editarAtividade`:** salva no backend primeiro (não é
+- **`useAgenda.editarAtividade`:** salva no backend primeiro (não é
   otimista, diferente de mover/redimensionar — aqui nada foi desenhado
   antes pela lib) e depois espelha a atividade devolvida na pool e em cada
   alocação dela, sem tocar em dia/horário/duração dos clones. Se o backend
@@ -750,7 +750,7 @@ borda do card, a tela ficava em branco.
   7.16) sempre manda os dois campos.
 - **Por que os testes não pegaram:** os e2e de PATCH conferiam o resultado
   com um `GET` depois, nunca o corpo da resposta do próprio PATCH; e os
-  testes do `useCronograma` mockam a API devolvendo objetos completos. Na
+  testes do `useAgenda` mockam a API devolvendo objetos completos. Na
   verificação manual da seção 7.15, mover um card foi conferido no banco,
   não na tela — o card sem duração passou despercebido.
 - **Correção:** `src/common/sem-campos-indefinidos.ts` (novo) descarta os
@@ -777,11 +777,11 @@ Boundary.
   ir pra tela, seção 7.15) e oferece "Tentar novamente". O erro vai para o
   `console.error` com o component stack.
 - **"Tentar novamente" só limpa o erro:** os filhos já foram desmontados
-  quando o erro aconteceu, então voltam do zero — no cronograma, isso
+  quando o erro aconteceu, então voltam do zero — na agenda, isso
   recarrega atividades e alocações do backend, descartando o estado que
   quebrou. Se o erro persistir, a mensagem volta (sem tela em branco).
 - **Dois níveis, mesmo componente:**
-  - em volta do `Cronograma` (dentro de `TelaAutenticada`, em `App.tsx`):
+  - em volta da `Agenda` (dentro de `TelaAutenticada`, em `App.tsx`):
     onde os erros de fato acontecem; o "Deslogar" continua disponível na
     própria mensagem de erro (`acoesFallback`, ver seção 7.19);
   - em volta do `App` inteiro (`main.tsx`): rede de segurança para qualquer
@@ -789,17 +789,17 @@ Boundary.
 - **Limite conhecido:** Error Boundaries do React só capturam erros de
   render e de ciclo de vida — erros em handlers de evento e em código
   assíncrono não passam por eles. Falhas de API já são tratadas à parte
-  (aviso `.app-erro` em `useCronograma`).
+  (aviso `.app-erro` em `useAgenda`).
 - **Testes:** 7 novos (88/88 no frontend) — `ErrorBoundary.test.tsx`
-  (comportamento) e `App.test.tsx` (posicionamento: erro no cronograma
+  (comportamento) e `App.test.tsx` (posicionamento: erro na agenda
   mostra a mensagem e mantém o "Deslogar" funcionando; falhava antes, com o
   erro subindo sem tratamento). Verificado no navegador reproduzindo o
   defeito da seção 7.17 sem mexer no código — interceptando `GET
   /alocacoes` via Playwright e removendo `horaInicio` da resposta: a
   mensagem apareceu com o "Deslogar" disponível e, sem a interceptação,
-  "Tentar novamente" trouxe o cronograma de volta.
+  "Tentar novamente" trouxe a agenda de volta.
 
-### 7.19. "Deslogar" no header do cronograma, com confirmação (26/09/2026)
+### 7.19. "Deslogar" no header da agenda, com confirmação (26/09/2026)
 
 Pedido do Lucas: ganhar espaço vertical colocando o "Deslogar" na mesma
 linha do "Limpar calendário", e pedir confirmação antes de deslogar.
@@ -811,9 +811,9 @@ linha do "Limpar calendário", e pedir confirmação antes de deslogar.
 - **`DeslogarButton`** (novo, `features/auth/`): mesmo padrão do
   `LimparCalendarioButton` — o clique só abre o `ConfirmDialog`.
 - **Decisão (confirmada com o Lucas): o botão mudou de lugar na árvore.**
-  Antes ficava em `TelaAutenticada`, *fora* do `ErrorBoundary` do
-  cronograma (seção 7.18), justamente para continuar na tela se o
-  cronograma quebrasse. Agora fica no header do `Cronograma`
+  Antes ficava em `TelaAutenticada`, *fora* do `ErrorBoundary` da
+  agenda (seção 7.18), justamente para continuar na tela se a
+  agenda quebrasse. Agora fica no header da `Agenda`
   (`.app-header__acoes`), que some junto com um erro — por isso o
   `ErrorBoundary` ganhou a prop opcional `acoesFallback`, e `App.tsx` passa
   um segundo `DeslogarButton` para a mensagem de erro. Alternativa
@@ -918,7 +918,7 @@ quadradas.
   acontecia com as fontes antigas — é o `overflow: visible` intencional da
   seção 7.14.
 
-### 7.23. Tela de login no padrão visual do cronograma (26/09/2026)
+### 7.23. Tela de login no padrão visual da agenda (26/09/2026)
 
 Pedido do Lucas: "a aparência da tela de login está péssima" — refazer por
 completo seguindo o padrão visual da agenda. Isso reverte a decisão da
@@ -934,7 +934,7 @@ seção 7.10.
   centralizado com os tokens de `index.css` (claro/escuro), o mesmo
   "eyebrow" do header, rótulos em caixa alta como os da `.config-toolbar`,
   campos no estilo dos formulários da agenda, `.btn` para enviar e o aviso
-  de erro com `.app-erro` (mesmo aviso das falhas de API do cronograma). A
+  de erro com `.app-erro` (mesmo aviso das falhas de API da agenda). A
   alternância login/cadastro virou um link discreto abaixo do botão.
   Campos ganharam `autocomplete` (`email`, `current-password` /
   `new-password`, `name`) — o navegador avisava da falta no console.
@@ -951,6 +951,46 @@ seção 7.10.
   interceptado), cadastro, modo escuro e mobile (375px, sem rolagem
   horizontal); confirmado que nenhum `<link>` do water.css entra no
   `<head>`.
+
+### 7.24. "Cronograma" passa a se chamar "Agenda" (26/09/2026)
+
+Pedido do Lucas: trocar o termo "cronograma" por "agenda" em todo o
+código e na documentação — combina mais com o objetivo final do sistema.
+Escopo confirmado com ele: tudo, inclusive o banco de dados.
+
+- **Texto e código:** "Agenda Pessoal" no título da página, no header e
+  na tela de login; `features/cronograma/useCronograma.ts` →
+  `features/agenda/useAgenda.ts` (via `git mv`), componente `Cronograma` →
+  `Agenda`, testes, comentários, `CLAUDE.md`, `README.md` e
+  `docs/requisitos.md`. A troca respeitou a concordância ("o cronograma"
+  → "a agenda", "meu próprio cronograma" → "minha própria agenda"), revisada
+  linha a linha — não foi substituição cega. O histórico do git (mensagens
+  de commits antigos) não foi reescrito. A chave `cronograma-pessoal:tema`
+  do `useTema` virou `agenda-pessoal:tema` (hook ainda não usado pelo app,
+  então ninguém perde preferência salva).
+- **Docker:** `container_name` `cronograma-*` → `agenda-*`.
+- **Banco renomeado sem perder dados:** `POSTGRES_DB` `cronograma` →
+  `agenda` e `POSTGRES_USER` `cronograma_user` → `agenda_user` (`.env`,
+  `.env.example` e defaults do `docker-compose.yml`). Como o Postgres só lê
+  essas variáveis ao criar o volume, só trocar o `.env` deixaria o backend
+  procurando um banco inexistente. Procedimento usado (vale como receita):
+  1. backup com `pg_dumpall` e contagem das tabelas;
+  2. `docker compose stop backend adminer` (não dá pra renomear um banco
+     com conexões abertas);
+  3. um superusuário temporário (o Postgres não deixa renomear o usuário
+     da própria sessão): `CREATE ROLE ... SUPERUSER LOGIN`, e com ele
+     `ALTER DATABASE cronograma RENAME TO agenda` e
+     `ALTER ROLE cronograma_user RENAME TO agenda_user`; depois
+     `DROP ROLE` do temporário. A senha continua valendo porque é SCRAM
+     (senhas MD5 seriam apagadas ao renomear o usuário — o MD5 usa o nome
+     como "sal");
+  4. atualizar `.env`/compose e `docker compose up -d`.
+  Conferido: mesmas contagens antes/depois (4 usuários, 4 atividades, 16
+  alocações), backend conectando (login inválido responde 401, não 500).
+- **Mantidos de propósito:** o nome da pasta/repositório
+  (`cronograma-pessoal`) — o nome do volume do banco
+  (`cronograma-pessoal_postgres_data`) vem do nome da pasta, então
+  renomeá-la deixaria os dados órfãos num volume antigo.
 
 ## 8. Requisitos funcionais
 

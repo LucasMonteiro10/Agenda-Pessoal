@@ -39,7 +39,7 @@
 }
 
 /* "Limpar calendário" e "Deslogar" dividem a mesma linha do header — antes
-   o "Deslogar" ocupava uma faixa própria acima do cronograma. */
+   o "Deslogar" ocupava uma faixa própria acima da agenda. */
 .app-header__acoes {
   display: flex;
   flex-wrap: wrap;
@@ -48,7 +48,7 @@
 }
 
 /* Erro inesperado de render capturado pelo ErrorBoundary
-   (components/ErrorBoundary.tsx) — no lugar do cronograma ou da tela toda. */
+   (components/ErrorBoundary.tsx) — no lugar da agenda ou da tela toda. */
 .erro-tela {
   max-width: 520px;
   margin: 64px auto;
@@ -76,7 +76,7 @@
 }
 
 /* Tela de login/cadastro (features/auth/TelaAutenticada.tsx): um card
-   centralizado com os mesmos tokens, campos e botões do cronograma. */
+   centralizado com os mesmos tokens, campos e botões da agenda. */
 .tela-login {
   flex: 1;
   display: flex;
@@ -175,7 +175,7 @@
   }
 }
 
-/* Falha ao salvar/carregar no backend (ver useCronograma). */
+/* Falha ao salvar/carregar no backend (ver useAgenda). */
 .app-erro {
   margin: 0;
   padding: 12px 16px;

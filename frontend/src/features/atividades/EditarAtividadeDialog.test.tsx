@@ -6,7 +6,7 @@ import { EditarAtividadeDialog } from './EditarAtividadeDialog.tsx';
 // atividades" > "Editar nome e cor propaga para todos os clones", "Editar só
 // o nome ou só a cor de uma atividade" e "Impedir renomear uma atividade
 // para um nome que já existe". A propagação para os clones em si é do
-// backend (join) + useCronograma — aqui só a parte de formulário.
+// backend (join) + useAgenda — aqui só a parte de formulário.
 describe('EditarAtividadeDialog', () => {
   const atividade = { id: 'a1', nome: 'Estudar Inglês', cor: '#3366ff' };
 

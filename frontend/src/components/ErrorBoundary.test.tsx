@@ -24,11 +24,11 @@ describe('ErrorBoundary', () => {
   it('renderiza os filhos normalmente quando não há erro', () => {
     render(
       <ErrorBoundary>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText('Meu cronograma')).toBeInTheDocument();
+    expect(screen.getByText('Minha agenda')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe('ErrorBoundary', () => {
     let deveQuebrar = true;
     function QuebraNaPrimeiraVez() {
       if (deveQuebrar) throw new Error('falha momentânea');
-      return <p>Meu cronograma</p>;
+      return <p>Minha agenda</p>;
     }
 
     render(
@@ -77,7 +77,7 @@ describe('ErrorBoundary', () => {
     deveQuebrar = false;
     await userEvent.click(screen.getByRole('button', { name: /tentar novamente/i }));
 
-    expect(screen.getByText('Meu cronograma')).toBeInTheDocument();
+    expect(screen.getByText('Minha agenda')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

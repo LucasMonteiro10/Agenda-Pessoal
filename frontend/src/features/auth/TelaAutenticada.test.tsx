@@ -9,7 +9,7 @@ vi.mock('./authApi.ts');
 
 // Cenários Gherkin: docs/requisitos.md, Feature "Autenticação". Sem uma
 // biblioteca de rotas decidida ainda, este componente representa a
-// alternância entre "cronograma" e "tela de login" a partir de uma flag de
+// alternância entre "agenda" e "tela de login" a partir de uma flag de
 // autenticação — não faz navegação de URL de fato.
 describe('TelaAutenticada', () => {
   beforeEach(() => {
@@ -17,27 +17,27 @@ describe('TelaAutenticada', () => {
     vi.mocked(authApi.cadastrar).mockReset();
   });
 
-  it('autenticado mostra o cronograma, sem o formulário de login', () => {
-    // O botão "Deslogar" fica no header do cronograma (DeslogarButton) — o
+  it('autenticado mostra a agenda, sem o formulário de login', () => {
+    // O botão "Deslogar" fica no header da agenda (DeslogarButton) — o
     // fluxo completo de deslogar é testado em App.test.tsx.
     render(
       <TelaAutenticada autenticado={true} onAutenticado={vi.fn()}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
-    expect(screen.getByText('Meu cronograma')).toBeInTheDocument();
+    expect(screen.getByText('Minha agenda')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /login/i })).not.toBeInTheDocument();
   });
 
   it('Então eu devo voltar para a tela de login quando não autenticado, pedindo email e senha', () => {
     render(
       <TelaAutenticada autenticado={false} onAutenticado={vi.fn()}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
-    expect(screen.queryByText('Meu cronograma')).not.toBeInTheDocument();
+    expect(screen.queryByText('Minha agenda')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('TelaAutenticada', () => {
     const onAutenticado = vi.fn();
     render(
       <TelaAutenticada autenticado={false} onAutenticado={onAutenticado}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
@@ -69,7 +69,7 @@ describe('TelaAutenticada', () => {
     const onAutenticado = vi.fn();
     render(
       <TelaAutenticada autenticado={false} onAutenticado={onAutenticado}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
@@ -93,7 +93,7 @@ describe('TelaAutenticada', () => {
     const onAutenticado = vi.fn();
     render(
       <TelaAutenticada autenticado={false} onAutenticado={onAutenticado}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
@@ -128,7 +128,7 @@ describe('TelaAutenticada', () => {
 
     const { rerender } = render(
       <TelaAutenticada autenticado={false} onAutenticado={vi.fn()}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
@@ -141,7 +141,7 @@ describe('TelaAutenticada', () => {
 
     rerender(
       <TelaAutenticada autenticado={true} onAutenticado={vi.fn()}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 
@@ -149,7 +149,7 @@ describe('TelaAutenticada', () => {
 
     rerender(
       <TelaAutenticada autenticado={false} onAutenticado={vi.fn()}>
-        <p>Meu cronograma</p>
+        <p>Minha agenda</p>
       </TelaAutenticada>,
     );
 

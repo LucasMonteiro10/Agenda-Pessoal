@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 export type Tema = 'claro' | 'escuro';
 
-const CHAVE_LOCAL_STORAGE = 'cronograma-pessoal:tema';
+const CHAVE_LOCAL_STORAGE = 'agenda-pessoal:tema';
 
 function lerTemaEscolhidoManualmente(): Tema | null {
   try {

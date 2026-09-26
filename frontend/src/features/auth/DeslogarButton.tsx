@@ -6,8 +6,8 @@ export interface DeslogarButtonProps {
 }
 
 // Mesmo padrão do LimparCalendarioButton: o clique só abre a confirmação.
-// Usado em dois lugares (App.tsx): no header do cronograma e na mensagem do
-// ErrorBoundary — se o cronograma quebra, o header some junto com ele.
+// Usado em dois lugares (App.tsx): no header da agenda e na mensagem do
+// ErrorBoundary — se a agenda quebra, o header some junto com ela.
 export function DeslogarButton({ onDeslogar }: DeslogarButtonProps) {
   const [confirmando, setConfirmando] = useState(false);
 

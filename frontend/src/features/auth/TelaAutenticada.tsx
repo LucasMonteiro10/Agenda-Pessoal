@@ -10,9 +10,9 @@ export interface TelaAutenticadaProps {
 type Modo = 'login' | 'cadastro';
 
 // Sem biblioteca de rotas decidida ainda (CLAUDE.md, seção 7), este
-// componente representa a alternância "cronograma" / "tela de login" a
+// componente representa a alternância "agenda" / "tela de login" a
 // partir de uma flag, sem navegação de URL de fato. O botão "Deslogar" fica
-// no header do cronograma (DeslogarButton, em App.tsx) — aqui só reagimos à
+// no header da agenda (DeslogarButton, em App.tsx) — aqui só reagimos à
 // troca da flag.
 export function TelaAutenticada({ autenticado, onAutenticado, children }: TelaAutenticadaProps) {
   const [modo, setModo] = useState<Modo>('login');
@@ -41,7 +41,7 @@ export function TelaAutenticada({ autenticado, onAutenticado, children }: TelaAu
         await authApi.cadastrar({ nomeCompleto, email, senha });
       }
       // Cadastro não retorna token — logamos em seguida com as mesmas
-      // credenciais para já entrar direto no cronograma.
+      // credenciais para já entrar direto na agenda.
       const { accessToken } = await authApi.login({ email, senha });
       // Volta ao estado inicial da tela de login já ao entrar — este
       // componente continua montado enquanto autenticado, então sem isso,
@@ -59,12 +59,12 @@ export function TelaAutenticada({ autenticado, onAutenticado, children }: TelaAu
     }
   }
 
-  // Mesmo visual do cronograma (tokens de index.css, `.btn` e campos no
+  // Mesmo visual da agenda (tokens de index.css, `.btn` e campos no
   // estilo dos formulários da agenda) — ver `.tela-login*` em App.css.
   return (
     <main className="tela-login">
       <section className="tela-login__card">
-        <span className="app-header__eyebrow">Cronograma Pessoal</span>
+        <span className="app-header__eyebrow">Agenda Pessoal</span>
         <h1>{modo === 'login' ? 'Login' : 'Criar conta'}</h1>
         <p className="tela-login__subtitulo">
           {modo === 'login'

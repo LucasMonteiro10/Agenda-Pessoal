@@ -8,7 +8,7 @@ import { CalendarioSemanal } from './features/calendario/CalendarioSemanal.tsx'
 import type { DiaSemana } from './features/calendario/dia-semana.ts'
 import { LimparCalendarioButton } from './features/calendario/LimparCalendarioButton.tsx'
 import { SeletorConfiguracoes } from './features/calendario/SeletorConfiguracoes.tsx'
-import { useCronograma } from './features/cronograma/useCronograma.ts'
+import { useAgenda } from './features/agenda/useAgenda.ts'
 
 const CHAVE_ACCESS_TOKEN = 'accessToken'
 
@@ -25,31 +25,31 @@ function App() {
     setAccessToken(null)
   }
 
-  // `Cronograma` só é montado com um token em mãos — deslogar desmonta o
+  // `Agenda` só é montada com um token em mãos — deslogar desmonta o
   // componente e descarta o estado do usuário anterior junto. O "Deslogar"
-  // fica no header do cronograma; se o cronograma quebrar, o header some
+  // fica no header da agenda; se a agenda quebrar, o header some
   // junto, então a mensagem do ErrorBoundary traz o próprio "Deslogar".
   return (
     <TelaAutenticada autenticado={accessToken !== null} onAutenticado={autenticar}>
       {accessToken && (
         <ErrorBoundary acoesFallback={<DeslogarButton onDeslogar={deslogar} />}>
-          <Cronograma accessToken={accessToken} onDeslogar={deslogar} />
+          <Agenda accessToken={accessToken} onDeslogar={deslogar} />
         </ErrorBoundary>
       )}
     </TelaAutenticada>
   )
 }
 
-interface CronogramaProps {
+interface AgendaProps {
   accessToken: string
   onDeslogar: () => void
 }
 
-// Atividades e Alocações vêm do backend (useCronograma) — cada ação é salva
+// Atividades e Alocações vêm do backend (useAgenda) — cada ação é salva
 // no banco, então nada se perde ao recarregar a página.
-function Cronograma({ accessToken, onDeslogar }: CronogramaProps) {
+function Agenda({ accessToken, onDeslogar }: AgendaProps) {
   // 401 do backend (token expirado ou inválido) desloga direto, sem confirmação.
-  const cronograma = useCronograma(accessToken, onDeslogar)
+  const agenda = useAgenda(accessToken, onDeslogar)
   const [diaInicioSemana, setDiaInicioSemana] = useState<DiaSemana>('domingo')
   const [granularidadeMinutos, setGranularidadeMinutos] = useState(30)
 
@@ -58,7 +58,7 @@ function Cronograma({ accessToken, onDeslogar }: CronogramaProps) {
       <header className="app-header">
         <div className="app-header__titulo">
           <span className="app-header__eyebrow">Semana recorrente</span>
-          <h1>Cronograma Pessoal</h1>
+          <h1>Agenda Pessoal</h1>
         </div>
         <SeletorConfiguracoes
           diaInicioSemana={diaInicioSemana}
@@ -67,14 +67,14 @@ function Cronograma({ accessToken, onDeslogar }: CronogramaProps) {
           onAlterarGranularidade={setGranularidadeMinutos}
         />
         <div className="app-header__acoes">
-          <LimparCalendarioButton onLimpar={cronograma.limparCalendario} />
+          <LimparCalendarioButton onLimpar={agenda.limparCalendario} />
           <DeslogarButton onDeslogar={onDeslogar} />
         </div>
       </header>
 
-      {cronograma.erro && (
+      {agenda.erro && (
         <p role="alert" className="app-erro">
-          {cronograma.erro}
+          {agenda.erro}
         </p>
       )}
 
@@ -82,23 +82,23 @@ function Cronograma({ accessToken, onDeslogar }: CronogramaProps) {
         <CalendarioSemanal
           diaInicioSemana={diaInicioSemana}
           granularidadeMinutos={granularidadeMinutos}
-          alocacoes={cronograma.alocacoes}
-          nomesAtividadesExistentes={cronograma.atividades.map((atividade) => atividade.nome)}
-          onCriarAlocacao={cronograma.criarAlocacao}
-          onMoverAlocacao={cronograma.moverAlocacao}
-          onRedimensionarAlocacao={cronograma.redimensionarAlocacao}
-          onDuplicar={cronograma.duplicarAlocacao}
-          onExcluir={cronograma.excluirAlocacao}
-          onExcluirAlocacoesDaAtividade={cronograma.excluirAlocacoesDaAtividade}
-          onCriarAtividadeEAlocar={cronograma.criarAtividadeEAlocar}
-          onEditarAtividade={cronograma.editarAtividade}
+          alocacoes={agenda.alocacoes}
+          nomesAtividadesExistentes={agenda.atividades.map((atividade) => atividade.nome)}
+          onCriarAlocacao={agenda.criarAlocacao}
+          onMoverAlocacao={agenda.moverAlocacao}
+          onRedimensionarAlocacao={agenda.redimensionarAlocacao}
+          onDuplicar={agenda.duplicarAlocacao}
+          onExcluir={agenda.excluirAlocacao}
+          onExcluirAlocacoesDaAtividade={agenda.excluirAlocacoesDaAtividade}
+          onCriarAtividadeEAlocar={agenda.criarAtividadeEAlocar}
+          onEditarAtividade={agenda.editarAtividade}
         />
 
         <PoolLateral
-          atividades={cronograma.atividades}
-          onExcluir={cronograma.excluirAtividade}
-          onEditar={cronograma.editarAtividade}
-          onCriar={cronograma.criarAtividade}
+          atividades={agenda.atividades}
+          onExcluir={agenda.excluirAtividade}
+          onEditar={agenda.editarAtividade}
+          onCriar={agenda.criarAtividade}
         />
       </div>
     </main>

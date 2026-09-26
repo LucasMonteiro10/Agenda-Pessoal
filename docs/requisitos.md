@@ -1,4 +1,4 @@
-# Requisitos — Cronograma Pessoal
+# Requisitos — Agenda Pessoal
 
 Levantamento funcional a partir da descrição do Lucas (11/09/2026), estruturado
 em user stories e cenários Gherkin. Cenários revisados e ajustados por Lucas em
@@ -13,7 +13,7 @@ Dia 3 (TDD).
   aparece como uma **barra de atividades** com o título "Suas atividades".
 - O usuário arrasta uma Atividade da pool para o grid semanal, criando uma
   **Alocação** (clone) com dia, horário e duração próprios.
-- Cada usuário autenticado tem seu próprio cronograma (login simples).
+- Cada usuário autenticado tem sua própria agenda (login simples).
 
 ## Glossário
 
@@ -370,7 +370,7 @@ Funcionalidade: Autenticação de usuário
   Cenário: Login com credenciais válidas
     Dado que eu tenho uma conta cadastrada
     Quando eu informo email e senha corretos
-    Então eu devo ser autenticado e ver meu próprio cronograma
+    Então eu devo ser autenticado e ver minha própria agenda
 
   Cenário: Login com credenciais inválidas
     Dado que informo um email ou senha que não correspondem a nenhuma conta cadastrada
@@ -394,7 +394,7 @@ Funcionalidade: Autenticação de usuário
     Dado que estou autenticado
     E que cliquei na opção de deslogar
     Quando eu cancelo a confirmação
-    Então devo continuar vendo o meu cronograma
+    Então devo continuar vendo a minha agenda
 
   Cenário: Isolamento de dados entre usuários
     Dado que existem dois usuários, A e B, cada um com atividades cadastradas

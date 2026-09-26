@@ -66,7 +66,7 @@ describe('AtividadeItem', () => {
   });
   // Cenário Gherkin: docs/requisitos.md, Feature "Gerenciar pool de
   // atividades" > "Editar nome e cor propaga para todos os clones" — a
-  // partir da pool. A propagação em si é do backend + useCronograma.
+  // partir da pool. A propagação em si é do backend + useAgenda.
   it('botão "Editar" abre o formulário de edição e salvar chama onEditar com id, nome e cor', async () => {
     const onEditar = vi.fn();
     render(

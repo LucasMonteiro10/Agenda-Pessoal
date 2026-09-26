@@ -3,7 +3,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 export interface ErrorBoundaryProps {
   children: ReactNode;
   // Botões extras exibidos ao lado do "Tentar novamente" (ex.: "Deslogar",
-  // que no cronograma fica no header — desmontado junto com o erro).
+  // que na agenda fica no header — desmontado junto com o erro).
   acoesFallback?: ReactNode;
 }
 
@@ -15,14 +15,14 @@ interface ErrorBoundaryState {
 // página fica em branco (CLAUDE.md, seção 7.17). Com ele, só a parte da
 // tela embrulhada é trocada por uma mensagem — com `acoesFallback`, a
 // mensagem pode oferecer ações que ficavam na parte quebrada (ex.: o
-// "Deslogar" do header do cronograma).
+// "Deslogar" do header da agenda).
 //
 // Precisa ser class component: o React (19) ainda não oferece hook para
 // capturar erros de render (`getDerivedStateFromError`/`componentDidCatch`).
 //
 // Só captura erros de render/ciclo de vida — erros em handlers de evento e
 // em código assíncrono não passam por aqui (falhas de API já viram o aviso
-// `.app-erro` em useCronograma).
+// `.app-erro` em useAgenda).
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { erro: null };
 
@@ -35,8 +35,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   // Os filhos já foram desmontados quando o erro aconteceu — limpar o erro
-  // os monta de novo do zero. No cronograma, isso recarrega atividades e
-  // alocações do backend (useCronograma), descartando o estado que quebrou.
+  // os monta de novo do zero. Na agenda, isso recarrega atividades e
+  // alocações do backend (useAgenda), descartando o estado que quebrou.
   private tentarNovamente = () => {
     this.setState({ erro: null });
   };

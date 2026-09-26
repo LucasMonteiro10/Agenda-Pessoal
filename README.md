@@ -1,10 +1,10 @@
-# Cronograma Pessoal
+# Agenda Pessoal
 
 Projeto de estudo (portfólio) desenvolvido seguindo o método "Anti-Vibe Coding"
 de Fábio Akita — engenharia de software disciplinada assistida por IA, em vez
 de código gerado sem controle.
 
-Sistema de cronograma semanal recorrente: o usuário mantém uma **pool** de
+Sistema de agenda semanal recorrente: o usuário mantém uma **pool** de
 atividades (ex.: "Estudar Inglês", "Trabalho", "Almoço") e as posiciona
 livremente em um grid de 7 dias, com horário e duração ajustáveis
 visualmente por drag-and-drop.

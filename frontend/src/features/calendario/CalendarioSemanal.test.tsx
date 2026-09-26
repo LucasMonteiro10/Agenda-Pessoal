@@ -15,7 +15,7 @@ class ResizeObserverFalso {
 // Cenários Gherkin: docs/requisitos.md, Feature "Interagir com um card de
 // alocação" > "Clicar em um card abre o menu de opções" e "Editar a
 // atividade a partir de um card reflete na pool e em todos os clones". A
-// propagação em si é do backend + useCronograma — aqui só o menu/formulário.
+// propagação em si é do backend + useAgenda — aqui só o menu/formulário.
 // Arrastar/redimensionar continuam sem teste de UI (CLAUDE.md, seção 6).
 describe('CalendarioSemanal — menu do card', () => {
   const estudar = { id: 'a1', nome: 'Estudar Inglês', cor: '#3366ff' };

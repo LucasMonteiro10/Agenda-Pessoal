@@ -22,7 +22,7 @@ const MENSAGEM_ERRO_PADRAO = 'Não foi possível completar a solicitação. Tent
 // Exceção: mover/redimensionar são otimistas. O FullCalendar já desenha o
 // card na posição nova antes de avisar a gente, então a tela é atualizada na
 // hora e, se o backend recusar, o card volta para onde estava.
-export function useCronograma(accessToken: string, onNaoAutorizado: () => void) {
+export function useAgenda(accessToken: string, onNaoAutorizado: () => void) {
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [alocacoes, setAlocacoes] = useState<Alocacao[]>([]);
   const [erro, setErro] = useState<string | null>(null);

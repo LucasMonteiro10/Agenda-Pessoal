@@ -68,7 +68,7 @@ describe('Autenticação (e2e)', () => {
     expect(loginResponse.status).toBe(200);
     expect(typeof loginResponse.body.accessToken).toBe('string');
 
-    // ...e ver meu próprio cronograma (a rota fica acessível com o token).
+    // ...e ver minha própria agenda (a rota fica acessível com o token).
     const atividadesResponse = await request(app.getHttpServer())
       .get('/atividades')
       .set('Authorization', `Bearer ${loginResponse.body.accessToken}`);
@@ -137,7 +137,7 @@ describe('Autenticação (e2e)', () => {
       .send({ nome: 'Atividade do Usuário B', cor: '#222222' })
       .expect(201);
 
-    // Quando o usuário A faz login (já fez acima) e busca seu cronograma
+    // Quando o usuário A faz login (já fez acima) e busca sua agenda
     const atividadesDeA = await request(app.getHttpServer())
       .get('/atividades')
       .set('Authorization', `Bearer ${tokenA}`);

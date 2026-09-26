@@ -3,7 +3,7 @@ import { ErroHttp } from '../../api/http.ts';
 import * as atividadesApi from '../atividades/atividadesApi.ts';
 import * as alocacoesApi from '../calendario/alocacoesApi.ts';
 import type { Alocacao } from '../calendario/tipos.ts';
-import { useCronograma } from './useCronograma.ts';
+import { useAgenda } from './useAgenda.ts';
 
 // As APIs falam com o backend de verdade (fetch) — aqui mockamos; os
 // cenários e2e de backend/test/*.e2e-spec.ts já cobrem as rotas.
@@ -29,12 +29,12 @@ const almocoSegunda: Alocacao = {
 };
 
 async function renderizarCarregado(onNaoAutorizado = vi.fn()) {
-  const hook = renderHook(() => useCronograma(TOKEN, onNaoAutorizado));
+  const hook = renderHook(() => useAgenda(TOKEN, onNaoAutorizado));
   await waitFor(() => expect(hook.result.current.atividades).toHaveLength(2));
   return hook;
 }
 
-describe('useCronograma', () => {
+describe('useAgenda', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(atividadesApi.listarAtividades).mockResolvedValue([trabalho, almoco]);
@@ -43,7 +43,7 @@ describe('useCronograma', () => {
 
   it('Cenário: Atividades e alocações continuam salvas depois de recarregar a página', async () => {
     // Dado que eu tenho atividades e alocações salvas no backend
-    // Quando eu abro o cronograma
+    // Quando eu abro a agenda
     const { result } = await renderizarCarregado();
 
     // Então eu devo ver exatamente o que está salvo
@@ -261,7 +261,7 @@ describe('useCronograma', () => {
     vi.mocked(atividadesApi.listarAtividades).mockRejectedValue(new ErroHttp('Unauthorized', 401));
     const onNaoAutorizado = vi.fn();
 
-    renderHook(() => useCronograma(TOKEN, onNaoAutorizado));
+    renderHook(() => useAgenda(TOKEN, onNaoAutorizado));
 
     await waitFor(() => expect(onNaoAutorizado).toHaveBeenCalledTimes(1));
   });
