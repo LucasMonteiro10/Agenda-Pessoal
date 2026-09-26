@@ -108,6 +108,32 @@ Funcionalidade: Gerenciar atividades na pool
     E avisar que já existe uma atividade com esse nome
 ```
 
+## Feature: Exibir ou ocultar a barra de atividades
+
+```gherkin
+Funcionalidade: Exibir ou ocultar a barra de atividades
+
+  Cenário: Ocultar a barra amplia o calendário
+    Dado que a barra "Suas atividades" está exibida
+    Quando eu clico em "Ocultar atividades"
+    Então a barra deve ser recolhida
+    E o calendário deve ocupar o espaço liberado
+
+  Cenário: Exibir a barra novamente
+    Dado que a barra "Suas atividades" está oculta
+    Quando eu clico em "Exibir atividades"
+    Então a barra deve voltar a mostrar o formulário de nova atividade e a lista de atividades
+
+  Cenário: A escolha é lembrada ao recarregar a página
+    Dado que eu ocultei a barra "Suas atividades"
+    Quando eu recarrego a página
+    Então a barra deve continuar oculta
+```
+> Nota: recolhida, a barra vira um trilho fino no mesmo lugar (à direita),
+> com o botão de exibir. A escolha é uma preferência visual do navegador
+> (`localStorage`), não vai para o backend — no primeiro acesso, a barra
+> aparece exibida.
+
 ## Feature: Alocar atividades no calendário
 
 ```gherkin

@@ -247,7 +247,58 @@
 }
 
 .pool-lateral h2 {
-  margin-top: 0;
+  margin: 0 0 8px;
+}
+
+/* Cabeçalho da barra: título + botão de ocultar/exibir. */
+.pool-lateral__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pool-lateral__alternar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font: 18px/1 var(--sans);
+  cursor: pointer;
+}
+
+.pool-lateral__alternar:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Recolhida: vira um trilho fino no mesmo lugar, com o botão de exibir no
+   topo e o título na vertical — o calendário (flex: 1) ocupa o resto. O
+   conteúdo em si fica com o atributo `hidden` (ver PoolLateral.tsx). */
+.pool-lateral--recolhida {
+  width: 32px;
+  padding: 12px 8px;
+}
+
+.pool-lateral--recolhida .pool-lateral__cabecalho {
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pool-lateral--recolhida .pool-lateral__alternar {
+  order: -1;
+}
+
+.pool-lateral--recolhida h2 {
+  margin: 0;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  font-size: 20px;
 }
 
 .pool-lateral__dica {
@@ -503,5 +554,25 @@
   .pool-lateral {
     width: 100%;
     position: static;
+  }
+
+  /* Empilhada embaixo do calendário, recolher não libera largura — só
+     encolhe a barra para a linha do título. */
+  .pool-lateral--recolhida {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .pool-lateral--recolhida .pool-lateral__cabecalho {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .pool-lateral--recolhida .pool-lateral__alternar {
+    order: 0;
+  }
+
+  .pool-lateral--recolhida h2 {
+    writing-mode: horizontal-tb;
   }
 }

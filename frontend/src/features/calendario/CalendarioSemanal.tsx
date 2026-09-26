@@ -200,6 +200,17 @@ export function CalendarioSemanal({
   // altura (duração/granularidade mudam, entrando ou saindo do modo
   // `fc-timegrid-event-short`) — sem recriar o card.
   const observadoresRef = useRef(new Map<HTMLElement, ResizeObserver>());
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // O FullCalendar só recalcula a largura das colunas no resize da janela
+  // (`handleWindowResize`). Quando só o container muda — ex.: recolher ou
+  // exibir a barra "Suas atividades" —, o grid ficava com a largura antiga.
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(() => calendarioRef.current?.getApi().updateSize());
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // `initialDate`/`initialView` só se aplicam na primeira renderização — o
   // FullCalendar não "escuta" mudanças nessas props depois de montado (por
@@ -268,7 +279,7 @@ export function CalendarioSemanal({
   }
 
   return (
-    <div className="calendario-semanal">
+    <div ref={containerRef} className="calendario-semanal">
       <FullCalendar
         ref={calendarioRef}
         plugins={[timeGridPlugin, interactionPlugin]}

@@ -7,6 +7,14 @@ import { useCronograma } from './features/cronograma/useCronograma.ts';
 // features/cronograma/useCronograma.test.ts.
 vi.mock('./features/cronograma/useCronograma.ts');
 
+// jsdom não implementa ResizeObserver — usado pelo CalendarioSemanal
+// (largura do container e layout dos cards), irrelevante aqui.
+class ResizeObserverFalso {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 function cronogramaVazio(): ReturnType<typeof useCronograma> {
   return {
     atividades: [],
@@ -31,11 +39,13 @@ function cronogramaVazio(): ReturnType<typeof useCronograma> {
 // o efeito de ponta a ponta (token removido, volta para o login).
 describe('App — deslogar', () => {
   beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverFalso);
     localStorage.setItem('accessToken', 'token-123');
     vi.mocked(useCronograma).mockReturnValue(cronogramaVazio());
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     localStorage.clear();
   });
 

@@ -826,6 +826,47 @@ linha do "Limpar calendário", e pedir confirmação antes de deslogar.
   no navegador (Playwright, API interceptada): botões na mesma linha e
   mesma altura; cancelar mantém o token, confirmar volta para o login.
 
+### 7.20. Barra "Suas atividades" recolhível (26/09/2026)
+
+Pedido do Lucas: ganhar espaço horizontal no calendário transformando a
+pool numa sidebar que pode ser ocultada/exibida.
+
+- **Cenários Gherkin** em `docs/requisitos.md`, nova Feature "Exibir ou
+  ocultar a barra de atividades" (revisados pelo Lucas).
+- **Decisões confirmadas com o Lucas:** recolhida, a barra vira um *trilho
+  fino* no mesmo lugar (botão « no topo + título na vertical), em vez de
+  sumir e mover o botão pro header; a escolha é lembrada em `localStorage`
+  (chave `poolLateralRecolhida`) — preferência visual do navegador, não vai
+  pro backend. Primeiro acesso: exibida.
+- **`PoolLateral`:** hook local `useBarraRecolhida` (leitura/escrita do
+  `localStorage` em try/catch — armazenamento bloqueado não quebra a
+  barra, só não lembra). O conteúdo recolhido fica com o atributo `hidden`
+  em vez de ser desmontado: o `Draggable` do FullCalendar continua preso à
+  mesma `<ul>` (o `useEffect` dele roda só na montagem) e um nome digitado
+  pela metade no formulário não se perde. Botão com `aria-expanded` /
+  `aria-controls`.
+- **Correção necessária no `CalendarioSemanal`:** o FullCalendar 6.1 só
+  recalcula a largura das colunas no resize da *janela*
+  (`handleWindowResize`). Recolher a barra alarga o container sem mudar a
+  janela — o card crescia, mas o grid ficava com a largura antiga (vão vazio
+  à direita). Agora um `ResizeObserver` no container chama
+  `getApi().updateSize()`. Por isso `App.test.tsx` também precisa do
+  `ResizeObserver` falso (o jsdom não implementa).
+- **Telas estreitas (< 900px):** a barra já fica empilhada embaixo do
+  calendário; recolher só a encolhe para a linha do título.
+- **Testes:** `PoolLateral.test.tsx` (novo — os 3 cenários, primeiro acesso
+  e `localStorage` indisponível) e `CalendarioSemanal.test.tsx` (resize do
+  container chama `updateSize`). 101/101 no frontend. "O calendário deve
+  ocupar o espaço liberado" depende de layout real — verificado no
+  navegador (Playwright, API interceptada): card 987→1251px e grid
+  953→1217px ao recolher, voltando a 987/953 ao exibir; a escolha persiste
+  após recarregar; arrastar da barra para o calendário depois de
+  ocultar/exibir continua criando a alocação.
+- **Defeito pré-existente encontrado (não corrigido aqui):** abaixo de
+  900px o calendário encolhe para ~34px de largura (`.app-corpo` vira
+  coluna com `align-items: flex-start`, e o calendário fica sem largura
+  definida). Reproduzido também sem as mudanças desta seção.
+
 ## 8. Requisitos funcionais
 
 Ver [`docs/requisitos.md`](docs/requisitos.md) para o levantamento completo e

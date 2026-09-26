@@ -1,3 +1,4 @@
+import { Calendar } from '@fullcalendar/core';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CalendarioSemanal, type CalendarioSemanalProps } from './CalendarioSemanal.tsx';
@@ -93,5 +94,67 @@ describe('CalendarioSemanal — menu do card', () => {
 
     expect(onEditarAtividade).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+// Motivação: CLAUDE.md, seção 7.20 — o FullCalendar só recalcula a largura
+// das colunas no resize da *janela*. Recolher a barra "Suas atividades"
+// alarga o container sem mudar a janela, e o grid ficava com a largura
+// antiga (sobrando um vão vazio à direita).
+describe('CalendarioSemanal — largura do container', () => {
+  const observadores: { callback: ResizeObserverCallback; alvos: Element[] }[] = [];
+
+  class ResizeObserverEspiao {
+    private registro: { callback: ResizeObserverCallback; alvos: Element[] };
+
+    constructor(callback: ResizeObserverCallback) {
+      this.registro = { callback, alvos: [] };
+      observadores.push(this.registro);
+    }
+
+    observe(alvo: Element) {
+      this.registro.alvos.push(alvo);
+    }
+
+    unobserve() {}
+    disconnect() {}
+  }
+
+  beforeEach(() => {
+    observadores.length = 0;
+    vi.stubGlobal('ResizeObserver', ResizeObserverEspiao);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('quando o container muda de largura, o calendário recalcula o tamanho', () => {
+    const updateSize = vi.spyOn(Calendar.prototype, 'updateSize');
+    const { container } = render(
+      <CalendarioSemanal
+        diaInicioSemana="domingo"
+        granularidadeMinutos={30}
+        alocacoes={[]}
+        nomesAtividadesExistentes={[]}
+        onCriarAlocacao={vi.fn()}
+        onMoverAlocacao={vi.fn()}
+        onRedimensionarAlocacao={vi.fn()}
+        onDuplicar={vi.fn()}
+        onExcluir={vi.fn()}
+        onExcluirAlocacoesDaAtividade={vi.fn()}
+        onCriarAtividadeEAlocar={vi.fn()}
+        onEditarAtividade={vi.fn()}
+      />,
+    );
+    const containerDoCalendario = container.querySelector('.calendario-semanal');
+    const observador = observadores.find((registro) => registro.alvos.includes(containerDoCalendario!));
+    expect(observador).toBeDefined();
+    updateSize.mockClear();
+
+    observador!.callback([], {} as ResizeObserver);
+
+    expect(updateSize).toHaveBeenCalled();
   });
 });
