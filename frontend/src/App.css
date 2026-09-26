@@ -445,6 +445,47 @@
   gap: 10px;
 }
 
+/* Diálogos com formulário de nome + cor (NovaAtividadeDialog e
+   EditarAtividadeDialog). Reaproveitam as classes do formulário da pool,
+   mas lá a linha também tem um botão — por isso os ajustes de altura ficam
+   escopados aqui, sem mexer na pool. */
+.confirm-dialog--form {
+  width: min(400px, calc(100vw - 32px));
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.confirm-dialog--form h2 {
+  margin-bottom: 16px;
+}
+
+/* Swatch e campo de nome com a mesma altura: antes o swatch (38px) ficava
+   alinhado pelo topo, mais baixo que o campo (~44px). */
+.confirm-dialog--form .nova-atividade-form__cor,
+.confirm-dialog--form .nova-atividade-form__nome {
+  box-sizing: border-box;
+  height: 44px;
+}
+
+.confirm-dialog--form .nova-atividade-form__cor {
+  width: 44px;
+}
+
+.confirm-dialog--form .nova-atividade-form__nome {
+  padding: 8px 12px;
+}
+
+/* `.confirm-dialog p` (mais específico) sobrescrevia a cor vermelha e a
+   margem da mensagem de erro. */
+.confirm-dialog--form .nova-atividade-form__erro {
+  margin: 6px 0 0;
+  color: #e5484d;
+}
+
+.confirm-dialog--form .confirm-dialog__acoes {
+  margin-top: 24px;
+}
+
 @media (max-width: 900px) {
   .app-corpo {
     flex-direction: column;

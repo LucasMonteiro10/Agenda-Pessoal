@@ -43,7 +43,7 @@ export function EditarAtividadeDialog({ atividade, nomesExistentes, onSalvar, on
   // contexto de empilhamento interno da lib.
   return createPortal(
     <div className="confirm-dialog__backdrop">
-      <div role="dialog" aria-modal="true" aria-label="Editar atividade" className="confirm-dialog">
+      <div role="dialog" aria-modal="true" aria-label="Editar atividade" className="confirm-dialog confirm-dialog--form">
         <h2>Editar atividade</h2>
         <p>A mudança vale para a pool e para todas as alocações desta atividade no calendário.</p>
         <form onSubmit={aoSubmeter}>
