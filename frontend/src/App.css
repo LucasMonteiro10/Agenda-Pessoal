@@ -75,6 +75,106 @@
   gap: 10px;
 }
 
+/* Tela de login/cadastro (features/auth/TelaAutenticada.tsx): um card
+   centralizado com os mesmos tokens, campos e botões do cronograma. */
+.tela-login {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+}
+
+.tela-login__card {
+  width: min(420px, 100%);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.tela-login__card h1 {
+  margin: 10px 0 8px;
+  font-size: 36px;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+.tela-login__subtitulo {
+  margin-bottom: 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.tela-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Mesmo rótulo em caixa alta dos seletores da `.config-toolbar`. */
+.tela-login__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.tela-login__campo input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font: 500 16px/1.4 var(--sans);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.tela-login__campo input:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.tela-login__enviar {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.tela-login__alternar {
+  align-self: center;
+  margin-top: 16px;
+  padding: 6px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: 600 14px/1.2 var(--sans);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.tela-login__alternar:hover {
+  color: var(--text-h);
+}
+
+@media (max-width: 480px) {
+  .tela-login__card {
+    padding: 24px 20px;
+  }
+}
+
 /* Falha ao salvar/carregar no backend (ver useCronograma). */
 .app-erro {
   margin: 0;
@@ -420,6 +520,12 @@
 
 .btn:hover {
   opacity: 0.88;
+}
+
+/* Ex.: "Entrar" enquanto a requisição de login está em andamento. */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .btn--secundario {

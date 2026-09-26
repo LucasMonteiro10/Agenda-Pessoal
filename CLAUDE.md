@@ -43,7 +43,8 @@ Diretrizes para qualquer IA atuando aqui:
   verdade a gerenciar, ver seção 7.4), `FullCalendar` (`@fullcalendar/react`
   + `timegrid` + `interaction`, todos fixados em `6.1.21`) para o grid
   semanal. CSS puro (arquivos `.css`, sem CSS-in-JS nem framework de UI) —
-  **exceção pontual:** `water.css` só na tela de login/cadastro, ver seção 7.10.
+  sem exceções desde 26/09/2026 (o `water.css` da tela de login saiu, ver
+  seção 7.23).
 - **Testes backend:** Vitest (padrão do NestJS a partir da v12) + Supertest
   para testes de integração de endpoints, Testcontainers (Postgres real em
   testes de integração).
@@ -456,6 +457,10 @@ em `App.tsx`). Implementado agora:
   o serviço.
 
 ### 7.10. `water.css` só na tela de login/cadastro (19/09/2026)
+
+> **Substituída pela seção 7.23 (26/09/2026):** o `water.css` foi removido
+> e a tela de login passou a seguir o visual do cronograma. O registro
+> abaixo fica como histórico da decisão original.
 
 Lucas pediu pra melhorar a aparência do login/cadastro. Foram comparadas 4
 bibliotecas CSS "classless" (Pico, Water.css, Simple.css, MVP.css) num
@@ -906,11 +911,46 @@ quadradas.
   de 30 min), o container do título só tem ~20px; a Plus Jakarta Sans,
   desenhada mais embaixo na linha que a serifa antiga, tinha a parte de
   baixo das letras cortada. Com 1.3 (~18px), cabe.
-- A tela de login continua com o visual do `water.css` (seção 7.10).
+- A tela de login ainda usava o `water.css` nesse momento — refeita na
+  seção 7.23.
 - Verificado no navegador (claro/escuro, header, pool, modal, cards de
   15/30/60/120 min). O título vazando abaixo de cards de 15 min já
   acontecia com as fontes antigas — é o `overflow: visible` intencional da
   seção 7.14.
+
+### 7.23. Tela de login no padrão visual do cronograma (26/09/2026)
+
+Pedido do Lucas: "a aparência da tela de login está péssima" — refazer por
+completo seguindo o padrão visual da agenda. Isso reverte a decisão da
+seção 7.10.
+
+- **Por que estava ruim:** o `water.css` (classless) disputava com o
+  `index.css` — fundo bege do `:root` com uma coluna branca do water.css,
+  campos lado a lado, botões cinza e a fonte do app misturada com a dele.
+- **`water.css` removido:** saiu o hook `useWaterCssEnquantoDeslogado`, o
+  `import 'water.css?url'` e a dependência do `package.json`. O CSS do app
+  volta a ser 100% próprio (seção 3, sem exceções).
+- **Nova tela (`TelaAutenticada.tsx` + `.tela-login*` em `App.css`):** card
+  centralizado com os tokens de `index.css` (claro/escuro), o mesmo
+  "eyebrow" do header, rótulos em caixa alta como os da `.config-toolbar`,
+  campos no estilo dos formulários da agenda, `.btn` para enviar e o aviso
+  de erro com `.app-erro` (mesmo aviso das falhas de API do cronograma). A
+  alternância login/cadastro virou um link discreto abaixo do botão.
+  Campos ganharam `autocomplete` (`email`, `current-password` /
+  `new-password`, `name`) — o navegador avisava da falta no console.
+  `.btn:disabled` (genérico) sinaliza o envio em andamento.
+- **Sem mudança de comportamento:** textos e nomes acessíveis mantidos
+  ("Login", "Criar conta", "Entrar", "Ainda não tenho conta", "Já tenho
+  conta"), então os testes existentes de `TelaAutenticada` seguem valendo
+  como rede de segurança sem alteração — 101/101 no frontend.
+- **Altura de linha:** título e subtítulo do card definem `line-height`
+  próprio — o `145%` do `:root` vira 26,1px absolutos herdados, menor que
+  o título de 36px, e colava título e subtítulo (mesma causa da seção
+  7.22).
+- Verificado no navegador (Playwright): login, erro de credenciais (401
+  interceptado), cadastro, modo escuro e mobile (375px, sem rolagem
+  horizontal); confirmado que nenhum `<link>` do water.css entra no
+  `<head>`.
 
 ## 8. Requisitos funcionais
 

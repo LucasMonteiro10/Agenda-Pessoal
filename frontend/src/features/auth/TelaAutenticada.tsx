@@ -1,5 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
-import waterCssHref from 'water.css?url';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import * as authApi from './authApi.ts';
 
 export interface TelaAutenticadaProps {
@@ -9,27 +8,6 @@ export interface TelaAutenticadaProps {
 }
 
 type Modo = 'login' | 'cadastro';
-
-// water.css é "classless" — estiliza <body>/<input>/<button>/<table> etc.
-// direto pela tag, documento inteiro. Só queremos esse visual na tela de
-// login (o resto do app já tem seu próprio estilo em index.css/App.css),
-// então o <link> é inserido/removido dinamicamente junto com a troca de
-// `autenticado`, em vez de um `import` estático de main.tsx (que ficaria
-// sempre ativo e recolocaria o cronograma inteiro também).
-function useWaterCssEnquantoDeslogado(autenticado: boolean) {
-  useEffect(() => {
-    if (autenticado) return;
-
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = waterCssHref;
-    document.head.appendChild(link);
-
-    return () => {
-      document.head.removeChild(link);
-    };
-  }, [autenticado]);
-}
 
 // Sem biblioteca de rotas decidida ainda (CLAUDE.md, seção 7), este
 // componente representa a alternância "cronograma" / "tela de login" a
@@ -43,8 +21,6 @@ export function TelaAutenticada({ autenticado, onAutenticado, children }: TelaAu
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
-
-  useWaterCssEnquantoDeslogado(autenticado);
 
   if (autenticado) {
     return <>{children}</>;
@@ -83,43 +59,70 @@ export function TelaAutenticada({ autenticado, onAutenticado, children }: TelaAu
     }
   }
 
+  // Mesmo visual do cronograma (tokens de index.css, `.btn` e campos no
+  // estilo dos formulários da agenda) — ver `.tela-login*` em App.css.
   return (
-    <main>
-      <h1>{modo === 'login' ? 'Login' : 'Criar conta'}</h1>
+    <main className="tela-login">
+      <section className="tela-login__card">
+        <span className="app-header__eyebrow">Cronograma Pessoal</span>
+        <h1>{modo === 'login' ? 'Login' : 'Criar conta'}</h1>
+        <p className="tela-login__subtitulo">
+          {modo === 'login'
+            ? 'Entre para ver e organizar a sua semana recorrente.'
+            : 'Crie sua conta para montar a sua semana recorrente.'}
+        </p>
 
-      <form onSubmit={handleSubmit}>
-        {modo === 'cadastro' && (
-          <label>
-            Nome completo
+        <form className="tela-login__form" onSubmit={handleSubmit}>
+          {modo === 'cadastro' && (
+            <label className="tela-login__campo">
+              Nome completo
+              <input
+                type="text"
+                value={nomeCompleto}
+                onChange={(event) => setNomeCompleto(event.target.value)}
+                autoComplete="name"
+                required
+              />
+            </label>
+          )}
+
+          <label className="tela-login__campo">
+            Email
             <input
-              type="text"
-              value={nomeCompleto}
-              onChange={(event) => setNomeCompleto(event.target.value)}
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
               required
             />
           </label>
-        )}
 
-        <label>
-          Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
+          <label className="tela-login__campo">
+            Senha
+            <input
+              type="password"
+              value={senha}
+              onChange={(event) => setSenha(event.target.value)}
+              autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
+              required
+            />
+          </label>
 
-        <label>
-          Senha
-          <input type="password" value={senha} onChange={(event) => setSenha(event.target.value)} required />
-        </label>
+          {erro && (
+            <p role="alert" className="app-erro">
+              {erro}
+            </p>
+          )}
 
-        {erro && <p role="alert">{erro}</p>}
+          <button type="submit" className="btn tela-login__enviar" disabled={enviando}>
+            {modo === 'login' ? 'Entrar' : 'Criar conta'}
+          </button>
+        </form>
 
-        <button type="submit" disabled={enviando}>
-          {modo === 'login' ? 'Entrar' : 'Criar conta'}
+        <button type="button" className="tela-login__alternar" onClick={alternarModo}>
+          {modo === 'login' ? 'Ainda não tenho conta' : 'Já tenho conta'}
         </button>
-      </form>
-
-      <button type="button" onClick={alternarModo}>
-        {modo === 'login' ? 'Ainda não tenho conta' : 'Já tenho conta'}
-      </button>
+      </section>
     </main>
   );
 }
