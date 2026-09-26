@@ -81,6 +81,17 @@ describe('ErrorBoundary', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('mostra as ações extras (acoesFallback) junto do "Tentar novamente"', () => {
+    render(
+      <ErrorBoundary acoesFallback={<button type="button">Deslogar</button>}>
+        <ComponenteQueQuebra />
+      </ErrorBoundary>,
+    );
+
+    expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /deslogar/i })).toBeInTheDocument();
+  });
+
   it('se o erro persistir, "Tentar novamente" volta a mostrar a mensagem (sem tela em branco)', async () => {
     render(
       <ErrorBoundary>

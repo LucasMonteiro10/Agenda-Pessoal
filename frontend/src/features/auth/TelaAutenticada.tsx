@@ -5,7 +5,6 @@ import * as authApi from './authApi.ts';
 export interface TelaAutenticadaProps {
   autenticado: boolean;
   onAutenticado: (accessToken: string) => void;
-  onDeslogar: () => void;
   children: ReactNode;
 }
 
@@ -34,8 +33,10 @@ function useWaterCssEnquantoDeslogado(autenticado: boolean) {
 
 // Sem biblioteca de rotas decidida ainda (CLAUDE.md, seção 7), este
 // componente representa a alternância "cronograma" / "tela de login" a
-// partir de uma flag, sem navegação de URL de fato.
-export function TelaAutenticada({ autenticado, onAutenticado, onDeslogar, children }: TelaAutenticadaProps) {
+// partir de uma flag, sem navegação de URL de fato. O botão "Deslogar" fica
+// no header do cronograma (DeslogarButton, em App.tsx) — aqui só reagimos à
+// troca da flag.
+export function TelaAutenticada({ autenticado, onAutenticado, children }: TelaAutenticadaProps) {
   const [modo, setModo] = useState<Modo>('login');
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [email, setEmail] = useState('');
@@ -45,28 +46,8 @@ export function TelaAutenticada({ autenticado, onAutenticado, onDeslogar, childr
 
   useWaterCssEnquantoDeslogado(autenticado);
 
-  function handleDeslogar() {
-    // Volta ao estado inicial da tela de login — sem isso, deslogar logo
-    // após um cadastro deixaria a tela presa em "Criar conta".
-    setModo('login');
-    setNomeCompleto('');
-    setEmail('');
-    setSenha('');
-    setErro(null);
-    onDeslogar();
-  }
-
   if (autenticado) {
-    return (
-      <div>
-        <div className="app-deslogar">
-          <button type="button" className="btn btn--secundario" onClick={handleDeslogar}>
-            Deslogar
-          </button>
-        </div>
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   function alternarModo() {
@@ -86,6 +67,14 @@ export function TelaAutenticada({ autenticado, onAutenticado, onDeslogar, childr
       // Cadastro não retorna token — logamos em seguida com as mesmas
       // credenciais para já entrar direto no cronograma.
       const { accessToken } = await authApi.login({ email, senha });
+      // Volta ao estado inicial da tela de login já ao entrar — este
+      // componente continua montado enquanto autenticado, então sem isso,
+      // deslogar (pelo botão ou por um 401) logo após um cadastro deixaria a
+      // tela presa em "Criar conta".
+      setModo('login');
+      setNomeCompleto('');
+      setEmail('');
+      setSenha('');
       onAutenticado(accessToken);
     } catch (erroCapturado) {
       setErro(erroCapturado instanceof Error ? erroCapturado.message : 'Não foi possível completar a solicitação.');

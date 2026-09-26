@@ -2,6 +2,9 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
+  // Botões extras exibidos ao lado do "Tentar novamente" (ex.: "Deslogar",
+  // que no cronograma fica no header — desmontado junto com o erro).
+  acoesFallback?: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -10,8 +13,9 @@ interface ErrorBoundaryState {
 
 // Sem isto, um erro durante o render desmonta a árvore React inteira e a
 // página fica em branco (CLAUDE.md, seção 7.17). Com ele, só a parte da
-// tela embrulhada é trocada por uma mensagem — o resto (ex.: o botão
-// "Deslogar", em TelaAutenticada) continua funcionando.
+// tela embrulhada é trocada por uma mensagem — com `acoesFallback`, a
+// mensagem pode oferecer ações que ficavam na parte quebrada (ex.: o
+// "Deslogar" do header do cronograma).
 //
 // Precisa ser class component: o React (19) ainda não oferece hook para
 // capturar erros de render (`getDerivedStateFromError`/`componentDidCatch`).
@@ -49,9 +53,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           Suas atividades e alocações continuam salvas. Tente novamente — se o problema persistir, recarregue a
           página.
         </p>
-        <button type="button" className="btn" onClick={this.tentarNovamente}>
-          Tentar novamente
-        </button>
+        <div className="erro-tela__acoes">
+          <button type="button" className="btn" onClick={this.tentarNovamente}>
+            Tentar novamente
+          </button>
+          {this.props.acoesFallback}
+        </div>
       </div>
     );
   }

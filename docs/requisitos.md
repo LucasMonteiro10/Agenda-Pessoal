@@ -355,7 +355,20 @@ Funcionalidade: Autenticação de usuário
   Cenário: Deslogar um usuário autenticado
     Dado que estou autenticado
     Quando eu clico na opção de deslogar
+    E confirmo que quero sair
     Então eu devo voltar para a tela de login
+
+  Cenário: Deslogar pede confirmação
+    Dado que estou autenticado
+    Quando eu clico na opção de deslogar
+    Então devo ver um pedido de confirmação
+    E devo continuar autenticado
+
+  Cenário: Cancelar o deslogar mantém a sessão
+    Dado que estou autenticado
+    E que cliquei na opção de deslogar
+    Quando eu cancelo a confirmação
+    Então devo continuar vendo o meu cronograma
 
   Cenário: Isolamento de dados entre usuários
     Dado que existem dois usuários, A e B, cada um com atividades cadastradas

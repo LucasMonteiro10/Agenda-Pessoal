@@ -17,34 +17,22 @@ describe('TelaAutenticada', () => {
     vi.mocked(authApi.cadastrar).mockReset();
   });
 
-  it('Cenário: Deslogar um usuário autenticado', async () => {
-    // Dado que estou autenticado
-    const onDeslogar = vi.fn();
-    const { rerender } = render(
-      <TelaAutenticada autenticado={true} onAutenticado={vi.fn()} onDeslogar={onDeslogar}>
+  it('autenticado mostra o cronograma, sem o formulário de login', () => {
+    // O botão "Deslogar" fica no header do cronograma (DeslogarButton) — o
+    // fluxo completo de deslogar é testado em App.test.tsx.
+    render(
+      <TelaAutenticada autenticado={true} onAutenticado={vi.fn()}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
+
     expect(screen.getByText('Meu cronograma')).toBeInTheDocument();
-
-    // Quando eu clico na opção de deslogar
-    await userEvent.click(screen.getByRole('button', { name: /deslogar/i }));
-
-    expect(onDeslogar).toHaveBeenCalledTimes(1);
-
-    // Então eu devo voltar para a tela de login (não presa num modo de
-    // cadastro que porventura estivesse aberto antes de deslogar).
-    rerender(
-      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()} onDeslogar={onDeslogar}>
-        <p>Meu cronograma</p>
-      </TelaAutenticada>,
-    );
-    expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /login/i })).not.toBeInTheDocument();
   });
 
   it('Então eu devo voltar para a tela de login quando não autenticado, pedindo email e senha', () => {
     render(
-      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
@@ -61,7 +49,7 @@ describe('TelaAutenticada', () => {
     vi.mocked(authApi.login).mockResolvedValue({ accessToken: 'token-123' });
     const onAutenticado = vi.fn();
     render(
-      <TelaAutenticada autenticado={false} onAutenticado={onAutenticado} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={false} onAutenticado={onAutenticado}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
@@ -80,7 +68,7 @@ describe('TelaAutenticada', () => {
     vi.mocked(authApi.login).mockRejectedValue(new Error('Email ou senha incorretos'));
     const onAutenticado = vi.fn();
     render(
-      <TelaAutenticada autenticado={false} onAutenticado={onAutenticado} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={false} onAutenticado={onAutenticado}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
@@ -104,7 +92,7 @@ describe('TelaAutenticada', () => {
     vi.mocked(authApi.login).mockResolvedValue({ accessToken: 'token-novo' });
     const onAutenticado = vi.fn();
     render(
-      <TelaAutenticada autenticado={false} onAutenticado={onAutenticado} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={false} onAutenticado={onAutenticado}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
@@ -139,7 +127,7 @@ describe('TelaAutenticada', () => {
     vi.mocked(authApi.login).mockResolvedValue({ accessToken: 'token-novo' });
 
     const { rerender } = render(
-      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
@@ -152,14 +140,15 @@ describe('TelaAutenticada', () => {
     await userEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     rerender(
-      <TelaAutenticada autenticado={true} onAutenticado={vi.fn()} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={true} onAutenticado={vi.fn()}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );
-    await userEvent.click(screen.getByRole('button', { name: /deslogar/i }));
+
+    // Deslogar (pelo botão do header ou por um 401) só troca a flag.
 
     rerender(
-      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()} onDeslogar={vi.fn()}>
+      <TelaAutenticada autenticado={false} onAutenticado={vi.fn()}>
         <p>Meu cronograma</p>
       </TelaAutenticada>,
     );

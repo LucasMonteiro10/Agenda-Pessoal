@@ -777,8 +777,8 @@ Boundary.
   quebrou. Se o erro persistir, a mensagem volta (sem tela em branco).
 - **Dois níveis, mesmo componente:**
   - em volta do `Cronograma` (dentro de `TelaAutenticada`, em `App.tsx`):
-    onde os erros de fato acontecem; como fica *dentro* do
-    `TelaAutenticada`, o botão "Deslogar" continua na tela e funcionando;
+    onde os erros de fato acontecem; o "Deslogar" continua disponível na
+    própria mensagem de erro (`acoesFallback`, ver seção 7.19);
   - em volta do `App` inteiro (`main.tsx`): rede de segurança para qualquer
     outro ponto (ex.: tela de login).
 - **Limite conhecido:** Error Boundaries do React só capturam erros de
@@ -793,6 +793,38 @@ Boundary.
   /alocacoes` via Playwright e removendo `horaInicio` da resposta: a
   mensagem apareceu com o "Deslogar" disponível e, sem a interceptação,
   "Tentar novamente" trouxe o cronograma de volta.
+
+### 7.19. "Deslogar" no header do cronograma, com confirmação (26/09/2026)
+
+Pedido do Lucas: ganhar espaço vertical colocando o "Deslogar" na mesma
+linha do "Limpar calendário", e pedir confirmação antes de deslogar.
+
+- **Cenários Gherkin** em `docs/requisitos.md`, Feature "Autenticação"
+  (revisados pelo Lucas): "Deslogar um usuário autenticado" passou a incluir
+  "E confirmo que quero sair"; novos "Deslogar pede confirmação" e
+  "Cancelar o deslogar mantém a sessão".
+- **`DeslogarButton`** (novo, `features/auth/`): mesmo padrão do
+  `LimparCalendarioButton` — o clique só abre o `ConfirmDialog`.
+- **Decisão (confirmada com o Lucas): o botão mudou de lugar na árvore.**
+  Antes ficava em `TelaAutenticada`, *fora* do `ErrorBoundary` do
+  cronograma (seção 7.18), justamente para continuar na tela se o
+  cronograma quebrasse. Agora fica no header do `Cronograma`
+  (`.app-header__acoes`), que some junto com um erro — por isso o
+  `ErrorBoundary` ganhou a prop opcional `acoesFallback`, e `App.tsx` passa
+  um segundo `DeslogarButton` para a mensagem de erro. Alternativa
+  descartada: manter o botão em `TelaAutenticada` e posicioná-lo com
+  `position: absolute` sobre o header (frágil com a quebra de linha do
+  header em telas estreitas).
+- **`TelaAutenticada` perdeu a prop `onDeslogar`** e só reage à troca da
+  flag `autenticado`. O reset do formulário (voltar ao modo login, seção
+  7.9) passou a acontecer ao autenticar, e não ao deslogar — vale também
+  para o deslogar automático por 401, que continua sem confirmação.
+- **Testes:** `DeslogarButton.test.tsx` (fluxo de confirmação),
+  `App.test.tsx` (botão no header; confirmar volta ao login e remove o
+  token; cancelar mantém a sessão; "Deslogar" na mensagem de erro) e
+  `ErrorBoundary.test.tsx` (`acoesFallback`). 95/95 no frontend. Verificado
+  no navegador (Playwright, API interceptada): botões na mesma linha e
+  mesma altura; cancelar mantém o token, confirmar volta para o login.
 
 ## 8. Requisitos funcionais
 

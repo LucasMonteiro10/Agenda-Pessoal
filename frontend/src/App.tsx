@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { PoolLateral } from './features/atividades/PoolLateral.tsx'
+import { DeslogarButton } from './features/auth/DeslogarButton.tsx'
 import { TelaAutenticada } from './features/auth/TelaAutenticada.tsx'
 import { CalendarioSemanal } from './features/calendario/CalendarioSemanal.tsx'
 import type { DiaSemana } from './features/calendario/dia-semana.ts'
@@ -25,14 +26,14 @@ function App() {
   }
 
   // `Cronograma` só é montado com um token em mãos — deslogar desmonta o
-  // componente e descarta o estado do usuário anterior junto. O
-  // ErrorBoundary fica aqui dentro (e não em volta do TelaAutenticada) para
-  // que, se o cronograma quebrar, o botão "Deslogar" continue na tela.
+  // componente e descarta o estado do usuário anterior junto. O "Deslogar"
+  // fica no header do cronograma; se o cronograma quebrar, o header some
+  // junto, então a mensagem do ErrorBoundary traz o próprio "Deslogar".
   return (
-    <TelaAutenticada autenticado={accessToken !== null} onAutenticado={autenticar} onDeslogar={deslogar}>
+    <TelaAutenticada autenticado={accessToken !== null} onAutenticado={autenticar}>
       {accessToken && (
-        <ErrorBoundary>
-          <Cronograma accessToken={accessToken} onNaoAutorizado={deslogar} />
+        <ErrorBoundary acoesFallback={<DeslogarButton onDeslogar={deslogar} />}>
+          <Cronograma accessToken={accessToken} onDeslogar={deslogar} />
         </ErrorBoundary>
       )}
     </TelaAutenticada>
@@ -41,13 +42,14 @@ function App() {
 
 interface CronogramaProps {
   accessToken: string
-  onNaoAutorizado: () => void
+  onDeslogar: () => void
 }
 
 // Atividades e Alocações vêm do backend (useCronograma) — cada ação é salva
 // no banco, então nada se perde ao recarregar a página.
-function Cronograma({ accessToken, onNaoAutorizado }: CronogramaProps) {
-  const cronograma = useCronograma(accessToken, onNaoAutorizado)
+function Cronograma({ accessToken, onDeslogar }: CronogramaProps) {
+  // 401 do backend (token expirado ou inválido) desloga direto, sem confirmação.
+  const cronograma = useCronograma(accessToken, onDeslogar)
   const [diaInicioSemana, setDiaInicioSemana] = useState<DiaSemana>('domingo')
   const [granularidadeMinutos, setGranularidadeMinutos] = useState(30)
 
@@ -64,7 +66,10 @@ function Cronograma({ accessToken, onNaoAutorizado }: CronogramaProps) {
           onAlterarDiaInicioSemana={setDiaInicioSemana}
           onAlterarGranularidade={setGranularidadeMinutos}
         />
-        <LimparCalendarioButton onLimpar={cronograma.limparCalendario} />
+        <div className="app-header__acoes">
+          <LimparCalendarioButton onLimpar={cronograma.limparCalendario} />
+          <DeslogarButton onDeslogar={onDeslogar} />
+        </div>
       </header>
 
       {cronograma.erro && (
