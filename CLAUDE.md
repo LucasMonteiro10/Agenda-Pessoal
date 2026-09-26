@@ -862,10 +862,28 @@ pool numa sidebar que pode ser ocultada/exibida.
   953→1217px ao recolher, voltando a 987/953 ao exibir; a escolha persiste
   após recarregar; arrastar da barra para o calendário depois de
   ocultar/exibir continua criando a alocação.
-- **Defeito pré-existente encontrado (não corrigido aqui):** abaixo de
-  900px o calendário encolhe para ~34px de largura (`.app-corpo` vira
-  coluna com `align-items: flex-start`, e o calendário fica sem largura
-  definida). Reproduzido também sem as mudanças desta seção.
+- **Defeito pré-existente encontrado:** abaixo de 900px o calendário
+  encolhia para ~34px de largura. Reproduzido também sem as mudanças desta
+  seção; corrigido em commit separado (seção 7.21).
+
+### 7.21. Correção: calendário com ~34px de largura em telas estreitas (26/09/2026)
+
+Encontrado ao verificar a seção 7.20; já existia antes dela.
+
+- **Causa 1 — calendário encolhido:** abaixo de 900px, `.app-corpo` vira
+  coluna, mas mantinha o `align-items: flex-start` do desktop. Em coluna o
+  eixo cruzado é a largura, então o calendário (sem largura definida)
+  encolhia até o próprio padding e o FullCalendar ficava com largura 0.
+  Correção: `align-items: stretch` no media query.
+- **Causa 2 — rolagem horizontal:** a barra "Suas atividades" usava
+  `width: 100%` com `box-sizing: content-box` — padding e borda somavam
+  ~34px além da largura disponível. Correção: `width: auto` (esticada pelo
+  `stretch`).
+- **Sem teste automatizado:** depende de layout real, que o jsdom não
+  reproduz (mesma limitação das seções 7.6 e 7.13). Verificado no navegador
+  (Playwright): a 700px e a 400px, calendário e barra ocupam a largura
+  toda (621px e 321px), sem rolagem horizontal, com a barra exibida ou
+  recolhida; desktop (1400px) inalterado.
 
 ## 8. Requisitos funcionais
 

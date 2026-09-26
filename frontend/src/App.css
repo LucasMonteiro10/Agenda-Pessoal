@@ -547,19 +547,26 @@
 }
 
 @media (max-width: 900px) {
+  /* `stretch` (e não o `flex-start` do desktop): em coluna, o eixo cruzado
+     é a largura — com `flex-start`, o calendário encolhia até o próprio
+     padding (~34px, o FullCalendar ficava com largura 0). */
   .app-corpo {
     flex-direction: column;
+    align-items: stretch;
   }
 
+  /* `auto` (esticada pelo `stretch` acima) em vez de `width: 100%`: com o
+     padding e a borda somados aos 100% (`content-box`), a barra vazava
+     ~34px para a direita e criava rolagem horizontal. */
   .pool-lateral {
-    width: 100%;
+    width: auto;
     position: static;
   }
 
   /* Empilhada embaixo do calendário, recolher não libera largura — só
      encolhe a barra para a linha do título. */
   .pool-lateral--recolhida {
-    width: 100%;
+    width: auto;
     padding: 16px;
   }
 
