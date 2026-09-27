@@ -162,7 +162,8 @@ Diretrizes para qualquer IA atuando aqui:
   neste projeto (inclusive nos `Dockerfile.dev`).
 - `synchronize: true` no TypeORM (`backend/src/config/database.config.ts`) é
   temporário, só para Dia 2/3 sem migrations. Deve virar `false` a partir do
-  Dia 4, quando entram migrations versionadas.
+  Dia 4, quando entram migrations versionadas. **Resolvido em 26/09/2026**
+  (seção 7.26): `synchronize: false` e migrations em `src/migrations/`.
 - `npm install` no `frontend/` também pode precisar de `--testing-library/dom`
   como dependência explícita (peer do React Testing Library que o npm às
   vezes não resolve sozinho) e do mesmo `--legacy-peer-deps` do backend.
@@ -1034,6 +1035,60 @@ o projeto não tinha.
 - **Resultado:** 1/1 passando (~2s de teste; ~20s com o build e a subida
   do ambiente). O vídeo da postagem foi montado fora do repositório a
   partir da gravação do modo demo.
+
+### 7.26. Preparação para deploy na Vercel + Neon, com migrations (26/09/2026)
+
+Pedido do Lucas: preparar o projeto para publicar na Vercel. Arquitetura
+explicada e confirmada com ele: dois projetos Vercel no mesmo repositório
+(`frontend`, estático; `backend`, NestJS como Vercel Function, com
+detecção automática do `src/main.ts`) e Postgres no Neon, pela integração
+do Marketplace. O passo a passo no painel está no `README.md`.
+
+- **Conexão com o banco (`database.config.ts`):** com `DATABASE_URL`
+  (Neon), conecta pela URL com `ssl: true`; sem ela, segue com as
+  `POSTGRES_*` do Docker local e do Testcontainers. `DATABASE_URL` tem
+  prioridade — não deve ir para o `.env` local.
+- **`synchronize: false` e migrations (resolve a pendência da seção
+  7.2):** `src/migrations/1790477456233-CriarTabelasIniciais.ts` foi gerada
+  a partir das entidades pelo próprio schema builder do TypeORM (mesmos
+  nomes de constraints do `synchronize`) + `CREATE EXTENSION IF NOT EXISTS
+  "uuid-ossp"` (para o `uuid_generate_v4()`). A lista `MIGRACOES`
+  (`config/migracoes.ts`) é explícita, não um glob: na Vercel o backend é
+  empacotado a partir do `main.ts`, e arquivos soltos em `dist/` não vão
+  junto.
+- **Execução na inicialização, com trava:** `ExecutarMigracoesNaInicializacao`
+  (`onModuleInit` no `AppModule`) chama `executarMigracoes`, que roda o
+  `MigrationExecutor` do TypeORM dentro de uma única transação com
+  `pg_advisory_xact_lock`. Motivo: várias instâncias da função podem subir
+  juntas na Vercel e tentariam criar as mesmas tabelas. Trava de
+  *transação* (e não de sessão) porque o pooler do Neon (PgBouncer em modo
+  transação) não mantém travas de sessão. O executor recebe o nosso
+  `queryRunner`; com `transaction = 'all'` e a transação já aberta, ele não
+  abre outra (conferido no código do TypeORM 1.1.1 instalado).
+- **Banco local migrado sem perder dados:** o banco do Docker local, criado
+  pelo `synchronize`, teve o schema comparado com as entidades (zero
+  diferenças) e a migration inicial registrada como executada (`fake` do
+  `MigrationExecutor`), depois de um backup. Clones novos criam tudo pelas
+  migrations.
+- **Porta e CORS (`config/servidor.config.ts`):** porta de `PORT`
+  (Vercel) → `BACKEND_PORT` (Docker) → 3000. `FRONTEND_URL` aceita várias
+  origens separadas por vírgula e `*` para as URLs de preview da Vercel —
+  o `*` vale um trecho de letras/números/hífens, nunca um ponto, com a
+  expressão ancorada (não dá pra encaixar outro domínio). Requisições sem
+  `Origin` (curl, servidor a servidor) passam — CORS é coisa de navegador.
+- **`.npmrc` com `legacy-peer-deps=true`** em `frontend/` e `backend/`: a
+  Vercel roda `npm install` puro. Conferido com `npm ci` limpo, sem a flag.
+- **Testes:** primeiros testes de unidade do backend
+  (`database.config.spec.ts`, `servidor.config.spec.ts` — 12) e
+  `test/migracoes.e2e-spec.ts` (3: duas instâncias subindo juntas num
+  banco vazio, idempotência, e **schema das migrations = entidades** —
+  entidade alterada sem migration faz o teste falhar mostrando o SQL que
+  falta; conferido alterando uma entidade de propósito). Todos os e2e
+  existentes passaram a criar o banco pelas migrations: 21/21 e2e, 101/101
+  frontend, E2E do Playwright verde num ambiente zerado. `tsc` pegou um
+  erro de tipagem no callback de CORS que o Vitest (sem checagem de tipos)
+  não pegaria — vale rodar `npx tsc --noEmit` no backend antes de commitar.
+- **Não verificado:** o deploy em si na Vercel (depende da conta do Lucas).
 
 ## 8. Requisitos funcionais
 
