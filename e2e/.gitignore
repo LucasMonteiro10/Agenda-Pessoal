@@ -1,0 +1,4 @@
+# Saídas do Playwright (relatório HTML, vídeos, traces, screenshots)
+test-results/
+playwright-report/
+blob-report/

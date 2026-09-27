@@ -1,0 +1,57 @@
+# Ambiente descartável para os testes E2E (Playwright, pasta e2e/).
+#
+# Projeto Docker separado ("agenda-e2e"), com portas próprias (2002/2003) e
+# sem container_name fixo: roda lado a lado com o ambiente de
+# desenvolvimento (docker-compose.yml) sem tocar nos seus containers nem no
+# seu banco. O Postgres guarda os dados em tmpfs (memória) — tudo some ao
+# derrubar o ambiente. Quem sobe e derruba é o próprio Playwright
+# (e2e/apoio/ambiente.ts); ver CLAUDE.md, seção 7.25.
+#
+# Diferente do docker-compose.yml, não há bind mount do código: as imagens
+# rodam o código copiado no build (--build a cada execução).
+name: agenda-e2e
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: agenda_e2e
+      POSTGRES_USER: agenda_e2e
+      POSTGRES_PASSWORD: agenda_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenda_e2e -d agenda_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: agenda_e2e
+      POSTGRES_USER: agenda_e2e
+      POSTGRES_PASSWORD: agenda_e2e
+      BACKEND_PORT: 2002
+      JWT_SECRET: segredo-so-para-e2e
+      FRONTEND_URL: http://localhost:2003
+    ports:
+      - "2002:2002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      VITE_API_URL: http://localhost:2002
+    ports:
+      - "2003:5173"
+    depends_on:
+      - backend
