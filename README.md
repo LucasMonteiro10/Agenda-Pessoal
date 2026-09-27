@@ -75,3 +75,30 @@ sem precisar reconstruir a imagem.
 > ```
 > Isso não afeta o Postgres (`postgres_data` é um volume nomeado, nunca
 > removido por engano por esse comando).
+
+## Como rodar os testes
+
+| Camada | Onde | Comando | Precisa de |
+| --- | --- | --- | --- |
+| Componentes (Vitest + React Testing Library) | `frontend/` | `npm test` | — |
+| API (Vitest + Supertest + Testcontainers) | `backend/` | `npm run test:e2e` | Docker ligado |
+| E2E (Playwright) | `e2e/` | `npm test` | Docker ligado |
+
+Antes da primeira execução, instale as dependências de cada pasta
+(`npm install --legacy-peer-deps` em `frontend/` e `backend/`;
+`npm install && npx playwright install chromium` em `e2e/`).
+
+Os testes E2E sobem sozinhos um ambiente descartável
+(`docker-compose.e2e.yml`: backend, frontend e Postgres em memória, nas
+portas 2002/2003) e o apagam no fim — não mexem no ambiente de
+desenvolvimento nem nos seus dados. Outros comandos em `e2e/`:
+
+- `npm run test:ui` — modo interativo do Playwright (passo a passo, com
+  a tela de cada ação);
+- `npm run test:demo` — execução lenta, com cursor visível e sempre
+  gravada em vídeo (`e2e/test-results/`);
+- `npm run report` — abre o relatório HTML da última execução;
+- `E2E_MANTER_AMBIENTE=1 npm test` — não derruba o ambiente no fim (para
+  repetir sem esperar o build; derrube depois com
+  `docker compose -f docker-compose.e2e.yml down -v`).
+

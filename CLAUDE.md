@@ -49,7 +49,8 @@ Diretrizes para qualquer IA atuando aqui:
   para testes de integração de endpoints, Testcontainers (Postgres real em
   testes de integração).
 - **Testes frontend:** Vitest + React Testing Library (unitário/componente),
-  Playwright para E2E (ferramenta que o Lucas já domina).
+  Playwright para E2E (ferramenta que o Lucas já domina) — pasta `e2e/`,
+  com ambiente Docker descartável próprio, desde 26/09/2026 (seção 7.25).
 - **Infra local:** Docker Compose com 4 serviços — `postgres`, `adminer`,
   `backend` e `frontend` (backend e frontend rodam com hot-reload via bind
   mount, desde o Dia 2).
@@ -991,6 +992,48 @@ Escopo confirmado com ele: tudo, inclusive o banco de dados.
   (`cronograma-pessoal`) — o nome do volume do banco
   (`cronograma-pessoal_postgres_data`) vem do nome da pasta, então
   renomeá-la deixaria os dados órfãos num volume antigo.
+
+### 7.25. Primeiro teste E2E com Playwright (26/09/2026)
+
+Pedido do Lucas: preparar uma postagem para o LinkedIn mostrando o
+Gherkin, o teste em Playwright e a execução. Como o Playwright estava
+previsto na stack (seção 3) mas nunca tinha sido implementado, o teste foi
+criado de verdade (decisão confirmada com ele), em vez de mostrar algo que
+o projeto não tinha.
+
+- **Cenário:** "Confirmar o formulário cria a atividade e já aloca no
+  horário clicado" (Feature "Criar atividade a partir de um espaço vazio
+  do calendário"). Os demais cenários da Feature (nome duplicado,
+  cancelar) continuam só nos testes de componente
+  (`NovaAtividadeDialog.test.tsx`) — o E2E cobre a jornada principal, de
+  ponta a ponta, e o resto fica nas camadas mais rápidas (pirâmide).
+  É um teste de aceitação de um comportamento que já existia (não TDD de
+  código novo); para garantir que ele não passa "à toa", foi rodada uma
+  cópia com a expectativa errada (alocação na quinta) — falhou com a
+  mensagem esperada.
+- **Estrutura (`e2e/`, pacote próprio):** `playwright.config.ts`,
+  `testes/*.spec.ts` e `apoio/` — fixture `paginaAutenticada` (cria um
+  usuário novo pela API a cada teste e injeta o token; login pela tela já
+  é coberto em `TelaAutenticada.test.tsx`), funções do calendário
+  (`colunaDoDia`, `clicarEmEspacoVazio`) e o ciclo do ambiente. Cada passo
+  do Gherkin é um `test.step` com o mesmo texto. Seletores acessíveis
+  (`getByRole`/`getByLabel`); a grade do FullCalendar, sem papéis
+  acessíveis, é a única exceção (classes/`data-*` da lib, isoladas em
+  `apoio/calendario.ts`). Nenhuma espera fixa — só asserções do Playwright
+  que já esperam sozinhas.
+- **Ambiente isolado (`docker-compose.e2e.yml`):** projeto Docker
+  `agenda-e2e`, portas 2002/2003, sem `container_name` fixo e com o
+  Postgres em `tmpfs` — roda ao lado do ambiente de desenvolvimento sem
+  tocar nos dados dele. `globalSetup` sobe com `--build --wait` e espera
+  backend e frontend responderem por HTTP; `globalTeardown` derruba com
+  `down -v` (`E2E_MANTER_AMBIENTE=1` pula essa etapa).
+- **Modo demonstração (`DEMO=1`, `npm run test:demo`):** `slowMo`, vídeo
+  1280×720 sempre gravado e um cursor desenhado na página (o vídeo do
+  Playwright não mostra o ponteiro). Fora dele, vídeo/trace só quando o
+  teste falha.
+- **Resultado:** 1/1 passando (~2s de teste; ~20s com o build e a subida
+  do ambiente). O vídeo da postagem foi montado fora do repositório a
+  partir da gravação do modo demo.
 
 ## 8. Requisitos funcionais
 
