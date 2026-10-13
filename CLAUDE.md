@@ -1089,6 +1089,39 @@ do Marketplace. O passo a passo no painel está no `README.md`.
   erro de tipagem no callback de CORS que o Vitest (sem checagem de tipos)
   não pegaria — vale rodar `npx tsc --noEmit` no backend antes de commitar.
 - **Não verificado:** o deploy em si na Vercel (depende da conta do Lucas).
+  Feito em 13/10/2026 — ver seção 7.27.
+
+### 7.27. Primeiro deploy na Vercel: o que quebrou (13/10/2026)
+
+Lucas pediu para conferir a URL publicada. O backend respondia `500
+FUNCTION_INVOCATION_FAILED` em toda requisição, e o frontend carregava a
+tela de login, mas chamava a API em `http://localhost:1002`. Três causas
+independentes:
+
+- **Os commits da seção 7.26 não estavam no GitHub.** A `main` local
+  estava 4 commits à frente de `origin/main`, e a Vercel publica a partir
+  do GitHub. Os dois projetos estavam rodando o código anterior à
+  preparação para o deploy, ainda com `synchronize: true` e sem suporte
+  a `DATABASE_URL`.
+- **`pg` fora do pacote da função (código).** O log da Vercel mostrava o
+  `DriverPackageNotInstalledError` do TypeORM (`PostgresDriver.js`,
+  `loadDependencies`). O TypeORM carrega o `pg` com um `require`
+  dinâmico (`PlatformTools.load("pg")`), e o empacotador da Vercel
+  (`@vercel/nft`) só segue imports estáticos a partir do `src/main.ts`:
+  `typeorm` e `bcrypt` entravam no pacote, `pg` não. É o mesmo motivo da
+  lista explícita de `MIGRACOES` (seção 7.26). Correção:
+  `database.config.ts` importa o `pg` e o passa na opção `driver`. Teste
+  de unidade novo em `database.config.spec.ts`, e conferido rodando o
+  `@vercel/nft` localmente contra o `dist/main.js`, antes e depois da
+  correção. `@types/pg` entrou como devDependency (o `tsc` exigiu).
+- **Variáveis de ambiente copiadas do `.env` local (configuração).** Os
+  dois projetos receberam o `.env` inteiro: `POSTGRES_*` apontando para o
+  Docker, `VITE_API_URL=http://localhost:1002` no frontend, e nenhum
+  `DATABASE_URL`, porque o banco Neon (`neon-apricot-elephant`) foi criado
+  mas não foi conectado ao projeto do backend. O README ganhou o aviso e
+  um roteiro de conferência pós-deploy.
+- **Fica para a esteira de CD (Dia 7):** hoje cada push na `main` vai
+  direto para produção, sem rodar teste nenhum.
 
 ## 8. Requisitos funcionais
 

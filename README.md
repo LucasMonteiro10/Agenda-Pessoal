@@ -146,3 +146,18 @@ na `main`, os dois são publicados de novo.
 Os arquivos `.npmrc` de `frontend/` e `backend/` já fazem a Vercel
 instalar as dependências com `legacy-peer-deps`, como o projeto exige.
 
+> **Não importe o `.env` local na Vercel.** Os valores dele são do Docker
+> (`POSTGRES_HOST=postgres`, `VITE_API_URL=http://localhost:...`) e não
+> funcionam lá — o frontend publicado passa a chamar o `localhost` de quem
+> abre a página, e o backend tenta um Postgres que não existe. Cada projeto
+> precisa só das variáveis listadas acima, com os valores de produção.
+
+**Conferindo depois do deploy:**
+
+1. A URL do backend responde `404` em `/` (não `500`) — o NestJS subiu e
+   conectou no banco; não há rota na raiz.
+2. No Neon (*Storage* → o banco → *Browse data*), a tabela `migrations`
+   tem a linha `CriarTabelasIniciais...`.
+3. No frontend publicado: criar conta, criar uma atividade, alocá-la e
+   recarregar a página — tudo continua lá.
+
