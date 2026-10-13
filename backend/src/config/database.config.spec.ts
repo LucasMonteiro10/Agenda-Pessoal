@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import pg from 'pg';
 import { buildDatabaseConfig } from './database.config.js';
 import { MIGRACOES } from './migracoes.js';
 
@@ -51,5 +52,12 @@ describe('buildDatabaseConfig', () => {
     expect(config.migrations).toEqual(MIGRACOES);
     expect(MIGRACOES.length).toBeGreaterThan(0);
     expect(config.migrationsRun).toBe(false);
+  });
+
+  // Sem isso, o TypeORM carrega o `pg` com um require dinâmico, que a Vercel
+  // não enxerga ao empacotar a função — o pacote fica de fora e o backend
+  // cai com "Postgres package has not been found installed" (seção 7.27).
+  it('entrega o driver pg ao TypeORM, em vez de deixar ele carregar por conta própria', () => {
+    expect(configCom(DOCKER_LOCAL).driver).toBe(pg);
   });
 });

@@ -1,5 +1,6 @@
 import type { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import pg from 'pg';
 import { MIGRACOES } from './migracoes.js';
 
 export function buildDatabaseConfig(config: ConfigService): TypeOrmModuleOptions {
@@ -9,6 +10,10 @@ export function buildDatabaseConfig(config: ConfigService): TypeOrmModuleOptions
   // banco para bater com as entidades e pode apagar colunas com dados.
   const comum = {
     type: 'postgres' as const,
+    // Import explícito: sozinho, o TypeORM carrega o `pg` com um require
+    // dinâmico, e a Vercel deixa de fora do pacote da função tudo o que não
+    // é importado de forma estática a partir do src/main.ts.
+    driver: pg,
     autoLoadEntities: true,
     synchronize: false,
     migrations: MIGRACOES,
