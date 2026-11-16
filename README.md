@@ -81,8 +81,7 @@ sem precisar reconstruir a imagem.
 | Camada | Onde | Comando | Precisa de |
 | --- | --- | --- | --- |
 | Componentes (Vitest + React Testing Library) | `frontend/` | `npm test` | — |
-| Unidade do backend (Vitest) | `backend/` | `npm test` | — |
-| API e migrations (Vitest + Supertest + Testcontainers) | `backend/` | `npm run test:e2e` | Docker ligado |
+| API (Vitest + Supertest + Testcontainers) | `backend/` | `npm run test:e2e` | Docker ligado |
 | E2E (Playwright) | `e2e/` | `npm test` | Docker ligado |
 
 Antes da primeira execução, instale as dependências de cada pasta
@@ -102,62 +101,4 @@ desenvolvimento nem nos seus dados. Outros comandos em `e2e/`:
 - `E2E_MANTER_AMBIENTE=1 npm test` — não derruba o ambiente no fim (para
   repetir sem esperar o build; derrube depois com
   `docker compose -f docker-compose.e2e.yml down -v`).
-
-## Mudanças no banco (migrations)
-
-O schema do banco vem só das migrations em `backend/src/migrations/`,
-executadas automaticamente quando o backend sobe (não há `synchronize`).
-Para mudar uma entidade:
-
-1. Altere a entidade.
-2. Rode `npm run test:e2e -- migracoes` em `backend/`: o teste
-   "o schema criado pelas migrations bate exatamente com as entidades"
-   falha e mostra o SQL que falta.
-3. Crie um arquivo novo em `backend/src/migrations/` com esse SQL (no
-   `up`, e o inverso no `down`) e adicione a classe à lista `MIGRACOES`
-   em `backend/src/config/migracoes.ts`.
-4. Rode os testes de novo — o de migrations passa a ficar verde.
-
-## Deploy na Vercel
-
-São dois projetos na Vercel, apontando para este mesmo repositório, e um
-banco Postgres no Neon (integração do Marketplace da Vercel). A cada push
-na `main`, os dois são publicados de novo.
-
-1. **Banco:** Vercel → *Storage* → *Marketplace* → **Neon** → criar o
-   banco. A integração cria a variável `DATABASE_URL`.
-2. **Backend:** *Add New* → *Project* → importar o repositório →
-   *Root Directory* `backend` (a Vercel detecta o NestJS pelo
-   `src/main.ts`). Conectar o banco Neon a este projeto e definir:
-   - `JWT_SECRET` — valor longo e aleatório (ex.: `openssl rand -base64 48`);
-   - `FRONTEND_URL` — preencher no passo 4.
-
-   As tabelas são criadas pelas migrations na primeira requisição.
-3. **Frontend:** novo projeto, mesmo repositório, *Root Directory*
-   `frontend` (Vite detectado automaticamente), com
-   `VITE_API_URL` = URL do backend publicado. A variável entra no build:
-   mudou, precisa de um novo deploy.
-4. **Fechar o ciclo:** no projeto do backend, definir `FRONTEND_URL` com a
-   URL do frontend — e, se quiser que as *preview deployments* funcionem,
-   o padrão delas também, separado por vírgula
-   (ex.: `https://agenda-pessoal.vercel.app,https://agenda-pessoal-*-seu-usuario.vercel.app`).
-   Fazer um novo deploy do backend.
-
-Os arquivos `.npmrc` de `frontend/` e `backend/` já fazem a Vercel
-instalar as dependências com `legacy-peer-deps`, como o projeto exige.
-
-> **Não importe o `.env` local na Vercel.** Os valores dele são do Docker
-> (`POSTGRES_HOST=postgres`, `VITE_API_URL=http://localhost:...`) e não
-> funcionam lá — o frontend publicado passa a chamar o `localhost` de quem
-> abre a página, e o backend tenta um Postgres que não existe. Cada projeto
-> precisa só das variáveis listadas acima, com os valores de produção.
-
-**Conferindo depois do deploy:**
-
-1. A URL do backend responde `404` em `/` (não `500`) — o NestJS subiu e
-   conectou no banco; não há rota na raiz.
-2. No Neon (*Storage* → o banco → *Browse data*), a tabela `migrations`
-   tem a linha `CriarTabelasIniciais...`.
-3. No frontend publicado: criar conta, criar uma atividade, alocá-la e
-   recarregar a página — tudo continua lá.
 

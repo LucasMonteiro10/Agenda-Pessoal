@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { buildDatabaseConfig } from './config/database.config.js';
-import { ExecutarMigracoesNaInicializacao } from './config/executar-migracoes-na-inicializacao.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AtividadesModule } from './atividades/atividades.module.js';
 import { AlocacoesModule } from './alocacoes/alocacoes.module.js';
@@ -23,6 +22,5 @@ import { AlocacoesModule } from './alocacoes/alocacoes.module.js';
     AtividadesModule,
     AlocacoesModule,
   ],
-  providers: [ExecutarMigracoesNaInicializacao],
 })
 export class AppModule {}
